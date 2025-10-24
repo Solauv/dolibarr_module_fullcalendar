@@ -52,7 +52,7 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 	*/
 
 			$TEvent = _events($start, $end, $month, $year);
-			foreach ($TEvent as &$event) unset($event['object']->db);
+			removeUselessFullcalendarOutputData($TEvent);
 			__out($TEvent, 'json');
 
 
@@ -61,7 +61,7 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
             $start = GETPOST('start', 'none');
 			$end = GETPOST('end', 'none');
             $TEvent = _tasks($start, $end);
-            foreach ($TEvent as &$event) unset($event['object']->db);
+            removeUselessFullcalendarOutputData($TEvent);
             __out($TEvent, 'json');
             break;
         case 'task-popin':
@@ -1677,5 +1677,36 @@ function getHolidayDateTime(string $date, int $halfday, int $morningStartSec, in
 	}
 
 	return $dt->format('Y-m-d\TH:i:s');
+}
+
+function removeUselessFullcalendarOutputData(&$data) {
+	$propertiesToRemove = [
+		'db',
+		'lines',
+		'fields',
+	];
+
+    if (is_object($data)) {
+        foreach (get_object_vars($data) as $prop => $val) {
+            if (in_array($prop, $propertiesToRemove)) {
+                unset($data->$prop);
+                continue;
+            }
+            if (is_array($val) || is_object($val)) {
+                removeUselessFullcalendarOutputData($val);
+            }
+        }
+    } elseif (is_array($data)) {
+        foreach ($data as $key => &$val) {
+            if (is_string($key) && in_array($key, $propertiesToRemove)) {
+                unset($data[$key]);
+                continue;
+            }
+            if (is_array($val) || is_object($val)) {
+                removeUselessFullcalendarOutputData($val);
+            }
+        }
+        unset($val);
+    }
 }
 
