@@ -721,8 +721,7 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 		$event->label = $obj->label;
 		$event->note = $obj->note;
 
-		$event->fetch_thirdparty();
-		$event->fetchObjectLinked();
+		$event->fetchObjectLinked(null, '', null, '', 'OR', 1, 'sourcetype', 0);
 
 		if ($event->fulldayevent) {
 			$tzforfullday = getDolGlobalString('MAIN_STORE_FULL_EVENT_IN_GMT');
@@ -816,8 +815,10 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 
 		if (getDolGlobalString('FULLCALENDAR_SHOW_INTERVENTION')) {
 			$linkedFichinter = null;
-			if (isset($event->linkedObjects['fichinter'])) {
-				$linkedFichinter = current($event->linkedObjects['fichinter']);
+			if (isset($event->linkedObjectsIds['fichinter'])) {
+				$linkedFichinterId = current($event->linkedObjectsIds['fichinter']);
+				$linkedFichinter = new Fichinter($db);
+				$linkedFichinter->fetch($linkedFichinterId);
 				if ($linkedFichinter) {
 					$TFichinter[$linkedFichinter->id] = $linkedFichinter->getNomUrl(1);
 					$TFichinterObject[$linkedFichinter->id] = $linkedFichinter;
