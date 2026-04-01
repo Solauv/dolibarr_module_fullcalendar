@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 
 ## Not Released
 
+## Release 2.8
+- NEW : COMPAT V23 - *01/04/2026* -2.8
+
 ## Release 2.7
 - FIX : Force withproject=1 on task links from fullcalendar to avoid slow prev/next on large datasets - *24/02/2026* - 2.7.26
 - FIX : PR#158 - add an option to show the status on event box - *20/02/2026* - 2.7.25
