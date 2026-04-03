@@ -67,7 +67,6 @@ switch ($get) {
 		*/
 
 		$TEvent = _events($start, $end, $month, $year);
-		foreach ($TEvent as &$event) unset($event['object']->db);
 		__out($TEvent, 'json');
 
 
@@ -76,7 +75,6 @@ switch ($get) {
 		$start = GETPOST('start', 'none');
 		$end = GETPOST('end', 'none');
 		$TEvent = _tasks($start, $end);
-		foreach ($TEvent as &$event) unset($event['object']->db);
 		__out($TEvent, 'json');
 			break;
 	case 'task-popin':
@@ -595,7 +593,8 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 	if ($filtert > 0 || $usergroup > 0) $sql.=" LEFT JOIN ".$db->prefix()."actioncomm_resources as ar ON (ar.fk_actioncomm = a.id)";
 	if ($usergroup > 0) $sql.= " LEFT JOIN ".$db->prefix()."usergroup_user as ugu ON ugu.fk_user = ar.fk_element";
 	        $sql.= ' WHERE 1=1';
-	        $sql.= " AND a.entity IN (".getEntity('agenda').")";	if ($search_categ_cus != -1) {
+	        $sql.= " AND a.entity IN (".getEntity('agenda').")";
+	if ($search_categ_cus != -1) {
 		if ($search_categ_cus == -2) {
 			$sql .= " AND NOT EXISTS (SELECT ca.fk_actioncomm FROM ".$db->prefix()."categorie_actioncomm as ca WHERE ca.fk_actioncomm = a.id)";
 		} elseif ($search_categ_cus > 0) {
@@ -673,11 +672,6 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 	while ($obj=$db->fetch_object($res)) {
 		$event = new ActionComm($db);
 
-		$eventContactId = $event->contact_id;
-
-		if (method_exists($event, 'fetch_thirdparty')) $event->fetch_thirdparty();
-		if (method_exists($event, 'fetchObjectLinked')) $event->fetchObjectLinked();
-
 		$event->id = $obj->id;
 		$event->fetch_userassigned();
 
@@ -695,15 +689,9 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 		$event->label = $obj->label;
 		$event->note = $obj->note;
 
-		if ($event->fulldayevent) {
-			$tzforfullday = getDolGlobalString('MAIN_STORE_FULL_EVENT_IN_GMT');
-			$event->datep = $db->jdate($obj->datep, $tzforfullday ? 'tzuser' : 'tzserver');	// If saved in $tzforfullday = gmt, we must invert date to be in user tz
-			$event->datef = $db->jdate($obj->datep2, $tzforfullday ? 'tzuser' : 'tzserver');
-		} else {
-			// Example: $obj->datep = '1970-01-01 01:00:00', jdate will return 0 if TZ of PHP server is Europe/Berlin (+1)
-			$event->datep = $db->jdate($obj->datep, 'tzserver');
-			$event->datef = $db->jdate($obj->datep2, 'tzserver');
-		}
+		// ! Need to fetch objects after event data has been set (otherwise fetchObjectLinked uses id 0 and fetch_thirdparty requires socid)
+		if (method_exists($event, 'fetch_thirdparty')) $event->fetch_thirdparty();
+		if (method_exists($event, 'fetchObjectLinked')) $event->fetchObjectLinked();
 
 		if (getDolGlobalString('FULLCALENDAR_SPLIT_DAYS')
 		&& getDolGlobalString('FULLCALENDAR_PREFILL_DATETIMES')
@@ -744,6 +732,9 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 			$societe->fetch($event->socid);
 			$TSociete[$event->socid]  = $societe->getNomUrl(1);
 		}
+
+		$eventContactId = $event->contact_id;
+
 		if ($eventContactId>0 && !isset($TContact[$eventContactId])) {
 			$contact = new Contact($db);
 			$contact->fetch($eventContactId);
@@ -787,16 +778,11 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 			}
 
 			if (!isset($TProjectObject[$event->fk_project]->fk_project_order)) {
-
-
-
 				$res = $db->query("SELECT rowid, ref FROM ".$db->prefix()."commande WHERE fk_projet=".intval($event->fk_project)." AND entity IN (".getEntity('commande').") ORDER BY date_commande DESC LIMIT 1");
 				if ($res===false) {
 					dol_syslog($db->lasterror(), LOG_ERR);
-				continue;
-                }
-					else{dol_include_once('/commande/class/commande.class.php');
-
+					continue;
+				} else {dol_include_once('/commande/class/commande.class.php');
 					$obj = $db->fetch_object($res);
 					$o=new Commande($db);
 					$o->id = $obj->rowid;
@@ -884,7 +870,6 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 		,'splitedfulldayevent'=> $event->splitedfulldayevent
 		,'fulldayevent'=> $event->fulldayevent
 		,'more'=>''
-		,'object'=>$event
 		);
 
 		/**
