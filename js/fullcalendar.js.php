@@ -399,7 +399,7 @@ if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE')) {
 
 				<?php
 				if(getDolGlobalString('FULLCALENDAR_SHOW_EVENT_STATUS')) {
-				?>	
+				?>
 					element.prepend('<div style="float:right;">'+event.statut+'</div>');
 				<?php } ?>
 
@@ -995,7 +995,7 @@ if ($reshook >= 0 && ! empty($hookmanager->resPrint)) {
 
 			var title_dialog = "<?php echo $langs->transnoentities('AddAnAction') ?>";
 			var bt_add_lang = "<?php echo $langs->transnoentities('Add'); ?>";
-			if (typeof calEvent === 'object')
+			if (calEvent?.id != null)
 			{
 				title_dialog = "<?php echo $langs->transnoentities('EditAnAction') ?>";
 				bt_add_lang = "<?php echo $langs->transnoentities('Update'); ?>";
