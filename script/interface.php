@@ -693,6 +693,16 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 		if (method_exists($event, 'fetch_thirdparty')) $event->fetch_thirdparty();
 		if (method_exists($event, 'fetchObjectLinked')) $event->fetchObjectLinked();
 
+		if ($event->fulldayevent) {
+			$tzforfullday = getDolGlobalString('MAIN_STORE_FULL_EVENT_IN_GMT');
+			$event->datep = $db->jdate($obj->datep, $tzforfullday ? 'tzuser' : 'tzserver');	// If saved in $tzforfullday = gmt, we must invert date to be in user tz
+			$event->datef = $db->jdate($obj->datep2, $tzforfullday ? 'tzuser' : 'tzserver');
+		} else {
+			// Example: $obj->datep = '1970-01-01 01:00:00', jdate will return 0 if TZ of PHP server is Europe/Berlin (+1)
+			$event->datep = $db->jdate($obj->datep, 'tzserver');
+			$event->datef = $db->jdate($obj->datep2, 'tzserver');
+		}
+
 		if (getDolGlobalString('FULLCALENDAR_SPLIT_DAYS')
 		&& getDolGlobalString('FULLCALENDAR_PREFILL_DATETIMES')
 		&& getDolGlobalString('FULLCALENDAR_PREFILL_DATETIME_MORNING_START')
