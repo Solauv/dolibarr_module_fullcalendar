@@ -1,23 +1,136 @@
-/*
- * Copyright (C) 2015 ATM Consulting <support@atm-consulting.fr>
- *
- * This program and files/directory inner it is free software: you can
- * redistribute it and/or modify it under the terms of the
- * GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+# FullCalendar for Dolibarr
 
-Installation
-============
+FullCalendar replaces the standard Dolibarr agenda display with an interactive
+calendar based on the bundled FullCalendar and Moment libraries.
 
-This module runs on a standard Dolibarr installation and does not require the ABRICOT framework.
-Enable it from the Dolibarr module administration page, then configure it from the FullCalendar setup pages.
+The module plugs into the native Dolibarr agenda pages, keeps using Dolibarr
+agenda objects and permissions, and can optionally expose a project task
+scheduling view.
+
+## Compatibility
+
+- Dolibarr: 16.0 or newer
+- PHP: 7.0 or newer
+- ABRICOT framework: not required
+- Database: no module-specific table is created
+
+## Main Features
+
+- Interactive agenda calendar on Dolibarr agenda pages.
+- Event creation, edition, drag and resize through the calendar UI.
+- Optional display of linked projects, last customer order, assigned users,
+  event status and event description.
+- Optional colors based on assigned users and event types.
+- Optional customer state filter on agenda events.
+- Optional multi-date filters on the native agenda list.
+- Optional time prefill for morning, afternoon and full-day slots.
+- Optional split display for full-day events.
+- Optional project task scheduling page under the Project menu.
+- External calendar support through Dolibarr agenda external calendar settings.
+
+## Installation
+
+1. Copy the module into `htdocs/custom/fullcalendar`.
+2. In Dolibarr, open **Home > Setup > Modules/Applications**.
+3. Enable **FullCalendar**.
+4. Open the module setup page and configure the options you need.
+
+The module runs on a standard Dolibarr installation and no longer requires the
+ABRICOT framework.
+
+## Permissions
+
+The module declares these permissions:
+
+- `fullcalendar->useit`: use the FullCalendar agenda integration.
+- `fullcalendar->task->read`: access the task scheduling calendar.
+- `fullcalendar->task->write`: edit tasks from the scheduling calendar.
+
+Agenda event permissions still rely on Dolibarr native agenda rights. For
+example, users need the relevant native agenda create/edit rights to create or
+modify agenda events.
+
+## Configuration Pages
+
+The module adds two setup tabs:
+
+- **Settings**: agenda calendar behavior.
+- **Tasks**: project task scheduling behavior.
+
+### Agenda Settings
+
+Common constants configured from the setup page:
+
+- `FULLCALENDAR_AUTO_FILL_TITLE`: prefill the event title from the event type.
+- `FULLCALENDAR_SHOW_AFFECTED_USER`: show assigned users on calendar events.
+- `DONT_SHOW_AUTO_EVENT`: hide automatically inserted events by default.
+- `FULLCALENDAR_SHOW_PROJECT`: show linked projects on events.
+- `FULLCALENDAR_SHOW_ORDER`: show the latest customer order linked to the
+  event project.
+- `FULLCALENDAR_HIDE_DAYS`: hide weekdays, for example `6,0` for Saturday and
+  Sunday.
+- `FULLCALENDAR_SHOW_THIS_HOURS`: restrict day/week views, for example `9-18`.
+- `FULLCALENDAR_DURATION_SLOT`: calendar slot duration.
+- `FULLCALENDAR_USE_ASSIGNED_COLOR`: use the assigned user's color.
+- `FULLCALENDAR_SHOW_ALL_ASSIGNED_COLOR`: display colors from all assigned users
+  and event types.
+- `FULLCALENDAR_LIGTHNESS_SWAP`: lightness threshold used to choose white or
+  black text on event colors.
+- `FULLCALENDAR_USE_HUGE_WHITE_BORDER`: add white separators between displayed
+  events.
+- `FULLCALENDAR_FILTER_ON_STATE`: add customer department/state filtering.
+- `FULLCALENDAR_CAN_UPDATE_PERCENT`: allow progress percentage updates.
+- `FULLCALENDAR_SHOW_EVENT_DESCRIPTION`: show event descriptions directly in the
+  calendar.
+- `FULLCALENDAR_ENABLE_EVENT_LIST_MULTIDATE_FILTER`: add start/end date ranges
+  to the native agenda list filters.
+- `FULLCALENDAR_PREFILL_DATETIMES`: enable morning, afternoon and day prefill
+  shortcuts.
+- `FULLCALENDAR_PREFILL_DATETIME_MORNING_START`
+- `FULLCALENDAR_PREFILL_DATETIME_MORNING_END`
+- `FULLCALENDAR_PREFILL_DATETIME_AFTERNOON_START`
+- `FULLCALENDAR_PREFILL_DATETIME_AFTERNOON_END`
+- `FULLCALENDAR_SPLIT_DAYS`: display one full-day event as morning and afternoon
+  blocks when prefill ranges are configured.
+- `FULLCALENDAR_SHOW_EVENT_STATUS`: show the event status.
+
+### Task Settings
+
+Task scheduling is disabled by default and is controlled by:
+
+- `FULLCALENDAR_ENABLE_TASKS`: enable the project task calendar.
+- `FULLCALENDAR_TASK_SHOW_THIS_HOURS`: restrict day/week views for tasks.
+- `FULLCALENDAR_TASK_DURATION_SLOT`: task calendar slot duration.
+
+When enabled, the module adds a **Project > Ordonnancement > Tasks** menu entry
+that opens `/fullcalendar/task.php`.
+
+## Hooks and Entry Points
+
+The descriptor declares hooks for:
+
+- `agenda`
+- `agendalist`
+
+Main runtime files:
+
+- `class/actions_fullcalendar.class.php`: injects the calendar JavaScript into
+  agenda pages and adds optional multi-date agenda list filters.
+- `js/fullcalendar.js.php`: generates the JavaScript used by the agenda calendar.
+- `script/interface.php`: AJAX endpoint for agenda events, tasks, holidays and
+  external calendars.
+- `task.php`: project task scheduling calendar.
+
+## Maintenance Notes
+
+- The module stores its settings in Dolibarr constants.
+- It does not create custom SQL tables.
+- The historical `TechATM` class is still used for the About page and remote
+  latest-version URL.
+- The module activation no longer loads ABRICOT or a legacy database setup
+  script.
+
+## License
+
+This module is distributed under the GNU General Public License version 3 or
+later.
