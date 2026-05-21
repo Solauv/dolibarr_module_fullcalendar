@@ -61,13 +61,15 @@ print dol_get_fiche_head(
 	'fullcalendar@fullcalendar'
 );
 
-require_once __DIR__ . '/../class/FullcalendarAboutPage.class.php';
+// About page goes here
+require_once __DIR__ . '/../class/techatm.class.php';
+$techATM = new \fullcalendar\TechATM($db);
+
 require_once __DIR__ . '/../core/modules/modfullcalendar.class.php';
 
 $moduleDescriptor = new modfullcalendar($db);
-$aboutPage = new \fullcalendar\FullcalendarAboutPage();
 
-print $aboutPage->render($moduleDescriptor);
+print $techATM->getAboutPage($moduleDescriptor);
 
 // Page end
 print dol_get_fiche_end();

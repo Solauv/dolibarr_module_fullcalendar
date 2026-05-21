@@ -62,7 +62,9 @@ class modfullcalendar extends DolibarrModules
 		// Possible values for version are: 'development', 'experimental', 'dolibarr' or version
 
 		$this->version = '2.9';
-		$this->url_last_version = '';
+		// Url to the file with your last numberversion of this module
+		require_once __DIR__ . '/../../class/techatm.class.php';
+		$this->url_last_version = \fullcalendar\TechATM::getLastModuleVersionUrl($this);
 
 		// Key used in llx_const table to save module status enabled/disabled (where MYMODULE is value of property name of module in uppercase)
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);

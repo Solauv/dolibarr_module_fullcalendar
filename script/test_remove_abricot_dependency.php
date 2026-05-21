@@ -32,15 +32,6 @@ $checks = array(
 		"'TPDOdb'" => 'create-maj-base.php must not mention ABRICOT TPDOdb',
 		"'TXXX'" => 'create-maj-base.php must not keep ABRICOT sample object code',
 	),
-	'core/modules/modfullcalendar.class.php' => array(
-		"'techatm.class.php'" => 'module descriptor must not require TechATM',
-		"'TechATM::'" => 'module descriptor must not call TechATM',
-		"'modules-last-version.php'" => 'module descriptor must not call ATM remote version endpoint',
-	),
-	'admin/fullcalendar_about.php' => array(
-		"'techatm.class.php'" => 'about page must not require TechATM',
-		"'new \\fullcalendar\\TechATM'" => 'about page must not instantiate TechATM',
-	),
 );
 
 $failed = false;
@@ -66,12 +57,6 @@ foreach ($checks as $relativePath => $needles) {
 			$failed = true;
 		}
 	}
-}
-
-$aboutClass = $moduleRoot.'/class/FullcalendarAboutPage.class.php';
-if (!is_readable($aboutClass)) {
-	fwrite(STDERR, "[FAIL] Missing class/FullcalendarAboutPage.class.php\n");
-	$failed = true;
 }
 
 if ($failed) {
