@@ -67,7 +67,7 @@ switch ($get) {
 		*/
 
 		$TEvent = _events($start, $end, $month, $year);
-		__out($TEvent, 'json');
+		print json_encode($TEvent);
 
 
 		break;
@@ -75,7 +75,7 @@ switch ($get) {
 		$start = GETPOST('start', 'none');
 		$end = GETPOST('end', 'none');
 		$TEvent = _tasks($start, $end);
-		__out($TEvent, 'json');
+		print json_encode($TEvent);
 			break;
 	case 'task-popin':
 		$fk_task = GETPOST('fk_task', 'int');
@@ -410,7 +410,7 @@ function _tasks($date_start, $date_end)
 	$parameters = array();
 	$reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters); // Note that $action and $object may have been modified by hook
 	$sql .= $hookmanager->resPrint;
-	$sql .= " FROM ".MAIN_DB_PREFIX.$task->table_element ." as t";
+	$sql .= " FROM ".$db->prefix().$task->table_element ." as t";
 	$parameters = array();
 	$reshook = $hookmanager->executeHooks('printFieldListJoin', $parameters); // Note that $action and $object may have been modified by hook
 	$sql .= $hookmanager->resPrint;
@@ -592,8 +592,8 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 	// We must filter on assignement table
 	if ($filtert > 0 || $usergroup > 0) $sql.=" LEFT JOIN ".$db->prefix()."actioncomm_resources as ar ON (ar.fk_actioncomm = a.id)";
 	if ($usergroup > 0) $sql.= " LEFT JOIN ".$db->prefix()."usergroup_user as ugu ON ugu.fk_user = ar.fk_element";
-	        $sql.= ' WHERE 1=1';
-	        $sql.= " AND a.entity IN (".getEntity('agenda').")";
+			$sql.= ' WHERE 1=1';
+			$sql.= " AND a.entity IN (".getEntity('agenda').")";
 	if ($search_categ_cus != -1) {
 		if ($search_categ_cus == -2) {
 			$sql .= " AND NOT EXISTS (SELECT ca.fk_actioncomm FROM ".$db->prefix()."categorie_actioncomm as ca WHERE ca.fk_actioncomm = a.id)";
@@ -888,7 +888,7 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 		 * sachant que s'il y en a plusieurs, ce qui change c'est juste le fk_user
 		 */
 		if (getDolGlobalString('AGENDA_REMINDER_EMAIL') || getDolGlobalString('AGENDA_REMINDER_BROWSER')) {
-			$sqlremind = "SELECT acr.rowid FROM ".MAIN_DB_PREFIX."actioncomm_reminder acr WHERE acr.fk_actioncomm = ".$event->id;
+			$sqlremind = "SELECT acr.rowid FROM ".$db->prefix()."actioncomm_reminder acr WHERE acr.fk_actioncomm = ".$event->id;
 			$resql = $db->query($sqlremind);
 			if ($resql && $db->num_rows($resql)) {
 				$obj = $db->fetch_object($resql);
@@ -1450,8 +1450,8 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 								'id'=>$event->id
 								,'title'=>(!empty($event->label) ? $event->label : $event->libelle) . "\n(".$event->icalname.')'
 								,'allDay'=>(bool) ($event->fulldayevent)
-								,'start'=>(empty($event->datep) ? '' : date('Y-m-d H:i:s', (int)$event->datep))
-								,'end'=>(empty($event->datef) ? '' : date('Y-m-d H:i:s', (int)$event->datef))
+								,'start'=>(empty($event->datep) ? '' : dol_print_date($event->datep, '%Y-%m-%d %H:%M:%S'))
+								,'end'=>(empty($event->datef) ? '' : dol_print_date($event->datef, '%Y-%m-%d %H:%M:%S'))
 								,'url'=>dol_buildpath('/comm/action/card.php?id='.$event->id, 1)
 								,'editable'=>$editable
 								,'color'=>'#'.$colorcal
@@ -1514,8 +1514,8 @@ function addReminders($a, $mode = 'create')
 		$reminderTemplate = GETPOST('reminderTemplate');
 
 		if ($mode == 'drop') {
-			// aller rechercher les infos de reminder attaché
-			$sqlremind = "SELECT acr.rowid FROM ".MAIN_DB_PREFIX."actioncomm_reminder acr WHERE acr.fk_actioncomm = ".$a->id;
+			// Fetch reminder info attached to this action
+			$sqlremind = "SELECT acr.rowid FROM ".$db->prefix()."actioncomm_reminder acr WHERE acr.fk_actioncomm = ".$a->id;
 			$resql = $db->query($sqlremind);
 			if ($resql && $db->num_rows($resql)) {
 				$setReminder = true;
@@ -1535,7 +1535,7 @@ function addReminders($a, $mode = 'create')
 
 		if ($mode == 'update' || $mode == 'drop') {
 			// delete reminders to recreate them
-			$sql = "DELETE FROM ".MAIN_DB_PREFIX."actioncomm_reminder WHERE fk_actioncomm = ".$a->id;
+			$sql = "DELETE FROM ".$db->prefix()."actioncomm_reminder WHERE fk_actioncomm = ".$a->id;
 			$resql = $db->query($sql);
 		}
 

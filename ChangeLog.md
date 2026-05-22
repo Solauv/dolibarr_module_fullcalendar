@@ -2,6 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 ## Not Released
+- FIX: Remove mandatory ABRICOT framework dependency from module bootstrap and activation. - *21/05/2026* - 2.9.0
 
 ## Release 2.8
 - NEW : COMPAT V23 - *01/04/2026* -2.8

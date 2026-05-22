@@ -61,7 +61,7 @@ class modfullcalendar extends DolibarrModules
 		$this->description = "Description of module fullcalendar";
 		// Possible values for version are: 'development', 'experimental', 'dolibarr' or version
 
-		$this->version = '2.8';
+		$this->version = '2.9.0';
 		// Url to the file with your last numberversion of this module
 		require_once __DIR__ . '/../../class/techatm.class.php';
 		$this->url_last_version = \fullcalendar\TechATM::getLastModuleVersionUrl($this);
@@ -271,12 +271,18 @@ class modfullcalendar extends DolibarrModules
 	{
 		$sql = array();
 
-		define('INC_FROM_DOLIBARR', true);
+		if (!defined('INC_FROM_DOLIBARR')) {
+			define('INC_FROM_DOLIBARR', true);
+		}
 
 		dol_include_once('/fullcalendar/config.php');
-		dol_include_once('/fullcalendar/script/create-maj-base.php');
 
-		$result=$this->_load_tables('/fullcalendar/sql/');
+		if (is_dir(dol_buildpath('/fullcalendar/sql/', 0))) {
+			$result = $this->_load_tables('/fullcalendar/sql/');
+			if ($result < 0) {
+				return -1;
+			}
+		}
 
 		return $this->_init($sql, $options);
 	}
