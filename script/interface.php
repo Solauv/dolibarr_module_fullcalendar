@@ -1450,8 +1450,8 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 								'id'=>$event->id
 								,'title'=>(!empty($event->label) ? $event->label : $event->libelle) . "\n(".$event->icalname.')'
 								,'allDay'=>(bool) ($event->fulldayevent)
-								,'start'=>(empty($event->datep) ? '' : dol_print_date($event->datep, 'dayhourlog'))
-								,'end'=>(empty($event->datef) ? '' : dol_print_date($event->datep, 'dayhourlog'))
+								,'start'=>(empty($event->datep) ? '' : dol_print_date($event->datep, '%Y-%m-%d %H:%M:%S'))
+								,'end'=>(empty($event->datef) ? '' : dol_print_date($event->datef, '%Y-%m-%d %H:%M:%S'))
 								,'url'=>dol_buildpath('/comm/action/card.php?id='.$event->id, 1)
 								,'editable'=>$editable
 								,'color'=>'#'.$colorcal
