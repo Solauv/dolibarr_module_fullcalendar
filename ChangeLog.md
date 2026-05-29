@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## Not Released
 
 ## Release 2.7
+- FIX : Allow HTML content in task description (NOSCANPOSTFORINJECTION + GET→POST AJAX) - *29/05/2026* - 2.7.29
 - FIX : DA028181 - Events not visible in calendar - *07/04/2026* - 2.7.28
 - FIX : Clean JSON data security issue - *03/03/2026* - 2.7.27
 - FIX : Force withproject=1 on task links from fullcalendar to avoid slow prev/next on large datasets - *24/02/2026* - 2.7.26

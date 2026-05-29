@@ -16,6 +16,7 @@
  */
 global $user;
 if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token renewal
+if (!defined('NOSCANPOSTFORINJECTION')) define('NOSCANPOSTFORINJECTION', 1); // Allow HTML content in task description
 
 	require '../config.php';
 	require_once DOL_DOCUMENT_ROOT.'/comm/action/class/actioncomm.class.php';

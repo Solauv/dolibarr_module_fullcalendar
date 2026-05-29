@@ -247,6 +247,7 @@ print '</div>';
 			let data = $('#editableViewForm').serializeArray();
 			$.ajax({
 				url: '<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'
+				, type: 'POST'
 				, data: {
 					put: 'task-edit'
 					, data: data
