@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## Not Released
+
+## Release 2.9
 - FIX: Remove mandatory ABRICOT framework dependency from module bootstrap and activation. - *21/05/2026* - 2.9.0
 
 ## Release 2.8
