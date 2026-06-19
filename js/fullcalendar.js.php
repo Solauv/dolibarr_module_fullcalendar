@@ -1140,7 +1140,7 @@ if ($reshook >= 0 && ! empty($hookmanager->resPrint)) {
 									<?php
 									if (!empty($moreOptions)) {
 										foreach ($moreOptions as $param => $option) {
-											echo ',' . $param . ':$("#pop-new-event select[name=' . $param . ']").val()';
+											echo $param . ':$("#pop-new-event select[name=' . $param . ']").val()'.',';
 										}
 									}
 									?>
