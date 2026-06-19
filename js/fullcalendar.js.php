@@ -398,8 +398,8 @@ if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE')) {
 				}
 
 				<?php
-				if(getDolGlobalString('FULLCALENDAR_SHOW_EVENT_STATUS')) {
-				?>
+				if (getDolGlobalString('FULLCALENDAR_SHOW_EVENT_STATUS')) {
+					?>
 					element.prepend('<div style="float:right;">'+event.statut+'</div>');
 				<?php } ?>
 
