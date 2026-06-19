@@ -398,8 +398,8 @@ if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE')) {
 				}
 
 				<?php
-				if(getDolGlobalString('FULLCALENDAR_SHOW_EVENT_STATUS')) {
-				?>
+				if (getDolGlobalString('FULLCALENDAR_SHOW_EVENT_STATUS')) {
+					?>
 					element.prepend('<div style="float:right;">'+event.statut+'</div>');
 				<?php } ?>
 
@@ -1140,7 +1140,7 @@ if ($reshook >= 0 && ! empty($hookmanager->resPrint)) {
 									<?php
 									if (!empty($moreOptions)) {
 										foreach ($moreOptions as $param => $option) {
-											echo ',' . $param . ':$("#pop-new-event select[name=' . $param . ']").val()';
+											echo $param . ':$("#pop-new-event select[name=' . $param . ']").val()'.',';
 										}
 									}
 									?>
