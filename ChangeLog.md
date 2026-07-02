@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 
 ## Release 2.9
 - FIX : Compat V24 - audited against Dolibarr v24, already compatible (no code change) - *10/06/2026* - 2.9.1
+    + Error when displaying fullcalendar calendar
 - FIX: Remove mandatory ABRICOT framework dependency from module bootstrap and activation. - *21/05/2026* - 2.9.0
 
 ## Release 2.8
