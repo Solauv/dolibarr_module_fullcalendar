@@ -536,11 +536,21 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 
 	//If empty then try GETPOST(alpha, 'none') (this one works with comm/action/index.php
 	if (empty($actioncode)) {
-		$actioncodetmp =GETPOST("actioncode", "alpha", 3)?GETPOST("actioncode", "alpha", 3):(GETPOST("actioncode", 'none')=='0'?'0':'');
-		if (empty($actioncodetmp)) {
-			$actioncodetmp=GETPOST("search_actioncode", "alpha", 3)?GETPOST("search_actioncode", "alpha", 3):(GETPOST("search_actioncode", 'none')=='0'?'0':'');
+		// The event type filter is a multiselect (search_actioncode[] => array of codes) when
+		// MAIN_ENABLE_MULTISELECT_TYPE and AGENDA_USE_EVENT_TYPE are enabled, or a scalar otherwise.
+		$actioncodearray = GETPOST("search_actioncode", "array:aZ09", 3);
+		if (empty($actioncodearray)) {
+			$actioncodearray = GETPOST("actioncode", "array:aZ09", 3);
 		}
-		if ($actioncodetmp > 0) $actioncode=array($actioncodetmp);
+		if (!empty($actioncodearray)) {
+			$actioncode = $actioncodearray;
+		} else {
+			$actioncodetmp =GETPOST("actioncode", "alpha", 3)?GETPOST("actioncode", "alpha", 3):(GETPOST("actioncode", 'none')=='0'?'0':'');
+			if (empty($actioncodetmp)) {
+				$actioncodetmp=GETPOST("search_actioncode", "alpha", 3)?GETPOST("search_actioncode", "alpha", 3):(GETPOST("search_actioncode", 'none')=='0'?'0':'');
+			}
+			if ($actioncodetmp > 0) $actioncode=array($actioncodetmp);
+		}
 	}
 	if (empty($actioncode)) {
 		$actioncode = array();
