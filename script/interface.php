@@ -37,6 +37,12 @@ if (!defined('NOSCANPOSTFORINJECTION')) define('NOSCANPOSTFORINJECTION', 1); // 
 	$form = new Form($db);
 	$formother = new FormOther($db);
 
+	// This endpoint returns HTML fragments injected into FullCalendar events/tooltips, where the core
+	// AJAX tooltip handler (class "classforajaxtooltip") is never bound. When MAIN_ENABLE_AJAX_TOOLTIP is
+	// enabled, getNomUrl() emits a placeholder title="tocomplete" that shows up on hover. Force classic
+	// tooltips ("classfortooltip", already rebound by fullcalendar.js.php) so links show their real label.
+	$conf->global->MAIN_ENABLE_AJAX_TOOLTIP = 0;
+
 	$get=GETPOST('get', 'none');
 	$put=GETPOST('put', 'none');
 	$hookmanager->initHooks(array('fullcalendarinterface'));
