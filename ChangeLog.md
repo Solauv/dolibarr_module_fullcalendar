@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## Not Released
 
 ## Release 2.9
+- FIX : T6651 - Bookmark created from agenda did not keep the active search filters - *10/07/2026* - 2.9.4
 - FIX : T6651 - Calendar tooltips showed placeholder "tocomplete" when MAIN_ENABLE_AJAX_TOOLTIP is enabled - *10/07/2026* - 2.9.3
 - FIX : T6651 - Event type filter ignored in calendar view when multiselect type is enabled - *10/07/2026* - 2.9.2
 - FIX : Compat V24 - audited against Dolibarr v24, already compatible (no code change) - *10/06/2026* - 2.9.1

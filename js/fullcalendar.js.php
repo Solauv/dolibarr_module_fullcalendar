@@ -1140,7 +1140,7 @@ if ($reshook >= 0 && ! empty($hookmanager->resPrint)) {
 									<?php
 									if (!empty($moreOptions)) {
 										foreach ($moreOptions as $param => $option) {
-											echo $param . ':$("#pop-new-event select[name=' . $param . ']").val()'.',';
+											echo $param . ':$("#pop-new-event select[name=' . $param . ']").val(),';
 										}
 									}
 									?>
@@ -1239,9 +1239,16 @@ if ($reshook >= 0 && ! empty($hookmanager->resPrint)) {
 			var url = '<?php echo dol_buildpath('/comm/action/index.php', 1) ?>?'+$form_selector.serialize() ;
 			history.pushState("FullCalendar","FullCalendar", url)
 
-			var $a = $('table[summary=bookmarkstable] a.vsmenu[href*=create]');
-			$a.attr('href',"<?php echo dol_buildpath('/bookmarks/card.php', 1)  ?>?action=create&url_source="+encodeURIComponent(url)+"&url="+encodeURIComponent(url));
-			$('option[value=newbookmark]').attr("rel","<?php echo dol_buildpath('/bookmarks/card.php', 1) ?>?action=create&url="+encodeURIComponent(url));
+			var bookmarkCreateUrl = "<?php echo dol_buildpath('/bookmarks/card.php', 1) ?>?action=create&url="+encodeURIComponent(url);
+
+			// Dolibarr >= 18: "add this page to bookmarks" link in the top-menu bookmark dropdown
+			$('a.top-menu-dropdown-link[href*="action=create"]').attr('href', bookmarkCreateUrl);
+
+			// Legacy bookmark menu (older Dolibarr versions)
+			$('table[summary=bookmarkstable] a.vsmenu[href*=create]').attr('href', "<?php echo dol_buildpath('/bookmarks/card.php', 1)  ?>?action=create&url_source="+encodeURIComponent(url)+"&url="+encodeURIComponent(url));
+
+			// Text-browser select mode
+			$('option[value=newbookmark]').attr("rel", bookmarkCreateUrl);
 
 		});
 
