@@ -37,6 +37,12 @@ if (!defined('NOSCANPOSTFORINJECTION')) define('NOSCANPOSTFORINJECTION', 1); // 
 	$form = new Form($db);
 	$formother = new FormOther($db);
 
+	// This endpoint returns HTML fragments injected into FullCalendar events/tooltips, where the core
+	// AJAX tooltip handler (class "classforajaxtooltip") is never bound. When MAIN_ENABLE_AJAX_TOOLTIP is
+	// enabled, getNomUrl() emits a placeholder title="tocomplete" that shows up on hover. Force classic
+	// tooltips ("classfortooltip", already rebound by fullcalendar.js.php) so links show their real label.
+	$conf->global->MAIN_ENABLE_AJAX_TOOLTIP = 0;
+
 	$get=GETPOST('get', 'none');
 	$put=GETPOST('put', 'none');
 	$hookmanager->initHooks(array('fullcalendarinterface'));
@@ -536,11 +542,31 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 
 	//If empty then try GETPOST(alpha, 'none') (this one works with comm/action/index.php
 	if (empty($actioncode)) {
-		$actioncodetmp =GETPOST("actioncode", "alpha", 3)?GETPOST("actioncode", "alpha", 3):(GETPOST("actioncode", 'none')=='0'?'0':'');
-		if (empty($actioncodetmp)) {
-			$actioncodetmp=GETPOST("search_actioncode", "alpha", 3)?GETPOST("search_actioncode", "alpha", 3):(GETPOST("search_actioncode", 'none')=='0'?'0':'');
+		// The event type filter is a multiselect (search_actioncode[] => array of codes) when
+		// MAIN_ENABLE_MULTISELECT_TYPE and AGENDA_USE_EVENT_TYPE are enabled, or a scalar otherwise.
+		$actioncodearray = GETPOST("search_actioncode", "array:aZ09", 3);
+		if (empty($actioncodearray)) {
+			$actioncodearray = GETPOST("actioncode", "array:aZ09", 3);
 		}
-		if ($actioncodetmp > 0) $actioncode=array($actioncodetmp);
+		// Drop the "all"/empty sentinels: in single select mode the native filter renders an empty
+		// option with value "-1" (normalized to '' by comm/action/index.php), and comm/action/index.php
+		// itself falls back to '0' when the filter is submitted but empty. Keeping any of them would
+		// build "ca.code IN ('-1')" and hide every event on the default load.
+		$actioncodearray = array_values(array_filter($actioncodearray, function ($value) {
+			return (string) $value !== '' && (string) $value !== '-1' && (string) $value !== '0';
+		}));
+		if (!empty($actioncodearray)) {
+			$actioncode = $actioncodearray;
+		} else {
+			$actioncodetmp =GETPOST("actioncode", "alpha", 3)?GETPOST("actioncode", "alpha", 3):(GETPOST("actioncode", 'none')=='0'?'0':'');
+			if (empty($actioncodetmp)) {
+				$actioncodetmp=GETPOST("search_actioncode", "alpha", 3)?GETPOST("search_actioncode", "alpha", 3):(GETPOST("search_actioncode", 'none')=='0'?'0':'');
+			}
+			// GETPOST(..., 'alpha') returns arrays untouched (every sanitizeVal branch is guarded by
+			// !is_array()), and array(...) > 0 is always true in PHP: without is_scalar() an array input
+			// made only of sentinels rebuilds the nested array and forges "ca.code IN ('Array')".
+			if (is_scalar($actioncodetmp) && $actioncodetmp > 0) $actioncode = array($actioncodetmp);
+		}
 	}
 	if (empty($actioncode)) {
 		$actioncode = array();
@@ -607,7 +633,7 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 	}
 
 	if (!empty($actioncode)) {
-		$sql.=" AND ( ca.code IN ('".implode("','", $actioncode)."')";
+		$sql.=" AND ( ca.code IN (".$db->sanitize("'".implode("','", $actioncode)."'", 1).")";
 
 		if (in_array('AC_NON_AUTO', $actioncode)) $sql .= " OR ca.type != 'systemauto'";
 		elseif (in_array('AC_ALL_AUTO', $actioncode)) $sql .= " OR ca.type = 'systemauto'";
@@ -615,7 +641,7 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 			if (in_array('AC_OTH', $actioncode)) $sql .= " OR ca.type != 'systemauto'";
 			if (in_array('AC_OTH_AUTO', $actioncode)) $sql .= " OR ca.type = 'systemauto'";
 		} else {
-			$sql .= " OR ca.code IN ('".implode("','", $actioncode)."')";
+			$sql .= " OR ca.code IN (".$db->sanitize("'".implode("','", $actioncode)."'", 1).")";
 		}
 
 		$sql.=" )";
