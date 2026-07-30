@@ -1228,8 +1228,6 @@ if ($reshook >= 0 && ! empty($hookmanager->resPrint)) {
 		}
 
 		$form_selector.submit(function(event) {
-			console.log($form_selector.serialize() );
-			console.log($('#fullcalendar'));
 			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'+'?'+$form_selector.serialize();
 			$('#fullcalendar').fullCalendar('removeEvents');
 			$('#fullcalendar').fullCalendar('removeEventSource', currentsource);

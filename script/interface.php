@@ -548,6 +548,12 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 		if (empty($actioncodearray)) {
 			$actioncodearray = GETPOST("actioncode", "array:aZ09", 3);
 		}
+		// Drop the "all"/empty sentinels: in single select mode the native filter renders an empty
+		// option with value "-1" (normalized to '' by comm/action/index.php). Keeping it would build
+		// "ca.code IN ('-1')" and hide every event on the default load.
+		$actioncodearray = array_values(array_filter($actioncodearray, function ($value) {
+			return (string) $value !== '' && (string) $value !== '-1';
+		}));
 		if (!empty($actioncodearray)) {
 			$actioncode = $actioncodearray;
 		} else {
@@ -623,7 +629,7 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 	}
 
 	if (!empty($actioncode)) {
-		$sql.=" AND ( ca.code IN ('".implode("','", $actioncode)."')";
+		$sql.=" AND ( ca.code IN (".$db->sanitize("'".implode("','", $actioncode)."'", 1).")";
 
 		if (in_array('AC_NON_AUTO', $actioncode)) $sql .= " OR ca.type != 'systemauto'";
 		elseif (in_array('AC_ALL_AUTO', $actioncode)) $sql .= " OR ca.type = 'systemauto'";
@@ -631,7 +637,7 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 			if (in_array('AC_OTH', $actioncode)) $sql .= " OR ca.type != 'systemauto'";
 			if (in_array('AC_OTH_AUTO', $actioncode)) $sql .= " OR ca.type = 'systemauto'";
 		} else {
-			$sql .= " OR ca.code IN ('".implode("','", $actioncode)."')";
+			$sql .= " OR ca.code IN (".$db->sanitize("'".implode("','", $actioncode)."'", 1).")";
 		}
 
 		$sql.=" )";
