@@ -561,7 +561,10 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 			if (empty($actioncodetmp)) {
 				$actioncodetmp=GETPOST("search_actioncode", "alpha", 3)?GETPOST("search_actioncode", "alpha", 3):(GETPOST("search_actioncode", 'none')=='0'?'0':'');
 			}
-			if ($actioncodetmp > 0) $actioncode=array($actioncodetmp);
+			// GETPOST(..., 'alpha') returns arrays untouched (every sanitizeVal branch is guarded by
+			// !is_array()), and array(...) > 0 is always true in PHP: without is_scalar() an array input
+			// made only of sentinels rebuilds the nested array and forges "ca.code IN ('Array')".
+			if (is_scalar($actioncodetmp) && $actioncodetmp > 0) $actioncode = array($actioncodetmp);
 		}
 	}
 	if (empty($actioncode)) {
