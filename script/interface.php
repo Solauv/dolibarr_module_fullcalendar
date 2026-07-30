@@ -549,10 +549,11 @@ function _events($date_start, $date_end, $month = -1, $year = -1)
 			$actioncodearray = GETPOST("actioncode", "array:aZ09", 3);
 		}
 		// Drop the "all"/empty sentinels: in single select mode the native filter renders an empty
-		// option with value "-1" (normalized to '' by comm/action/index.php). Keeping it would build
-		// "ca.code IN ('-1')" and hide every event on the default load.
+		// option with value "-1" (normalized to '' by comm/action/index.php), and comm/action/index.php
+		// itself falls back to '0' when the filter is submitted but empty. Keeping any of them would
+		// build "ca.code IN ('-1')" and hide every event on the default load.
 		$actioncodearray = array_values(array_filter($actioncodearray, function ($value) {
-			return (string) $value !== '' && (string) $value !== '-1';
+			return (string) $value !== '' && (string) $value !== '-1' && (string) $value !== '0';
 		}));
 		if (!empty($actioncodearray)) {
 			$actioncode = $actioncodearray;
