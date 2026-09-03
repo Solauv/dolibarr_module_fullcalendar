@@ -1,4 +1,19 @@
 <?php
+/* Copyright (C) 2025 ATM Consulting
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', '1'); // Disable token renewal
 
@@ -10,9 +25,9 @@ header('Content-Type: text/javascript');
 
 	$langs->load('fullcalendar@fullcalendar');
 
-	if(getDolGlobalString('MAIN_NOT_INC_FULLCALENDAR_HEAD') && empty($_REQUEST['force_use_js'])) exit;
+	if (getDolGlobalString('MAIN_NOT_INC_FULLCALENDAR_HEAD') && empty($_REQUEST['force_use_js'])) exit;
 
-	if(!$user->hasRight('fullcalendar', 'useit')) exit;
+	if (!$user->hasRight('fullcalendar', 'useit')) exit;
 
 	dol_include_once('/core/class/html.formactions.class.php');
 	dol_include_once('/core/class/html.formprojet.class.php');
@@ -27,29 +42,28 @@ header('Content-Type: text/javascript');
 
 	list($langjs,$dummy) =explode('_', $langs->defaultlang);
 
-	if($langjs=='en') $langjs = 'en-gb';
+	if ($langjs=='en') $langjs = 'en-gb';
 
 	readfile(dol_buildpath('/fullcalendar/lib/moment/min/moment.min.js'));
 	readfile(dol_buildpath('/fullcalendar/lib/fullcalendar/dist/fullcalendar.min.js'));
 
-	if(!is_file(dol_buildpath('/fullcalendar/lib/fullcalendar/dist/lang/'.$langjs.'.js'))) $langjs = 'en-gb';
+	if (!is_file(dol_buildpath('/fullcalendar/lib/fullcalendar/dist/lang/'.$langjs.'.js'))) $langjs = 'en-gb';
 
 	readfile(dol_buildpath('/fullcalendar/lib/fullcalendar/dist/lang/'.$langjs.'.js'));
 
-	if(!empty($user->array_options['options_googlecalendarapi'])) {
+if (!empty($user->array_options['options_googlecalendarapi'])) {
 	//	readfile(dol_buildpath('/fullcalendar/lib/fullcalendar/dist/fullcalendar/gcal.js'));
-
-	}
+}
 
 	ob_start();
 	$selected = getDolGlobalString('AGENDA_USE_EVENT_TYPE_DEFAULT') ? getDolGlobalString('AGENDA_USE_EVENT_TYPE_DEFAULT') : -1;
 	$selectedText = "";
 	// on veut afficher le txt de l'action par defaut si la conf est activée
-	if ($selected != -1 && getDolGlobalInt('FULLCALENDAR_AUTO_FILL_TITLE')) {
-		$selectedText = $langs->getLabelFromKey($db, 'code', 'c_actioncomm', 'code', 'libelle', $selected);
-	}
+if ($selected != -1 && getDolGlobalInt('FULLCALENDAR_AUTO_FILL_TITLE')) {
+	$selectedText = $langs->getLabelFromKey($db, 'code', 'c_actioncomm', 'code', 'libelle', $selected);
+}
 	$formactions=new FormActions($db);
-	$formactions->select_type_actions($selected, "type_code","systemauto");
+	$formactions->select_type_actions($selected, "type_code", "systemauto");
 	$select_type_action = ob_get_clean();
 
 	$newToken = function_exists('newToken') ? newToken() : $_SESSION['newtoken'];
@@ -63,63 +77,55 @@ header('Content-Type: text/javascript');
 
 	$force_entity=0;
 	$sql = "SELECT DISTINCT u.rowid, u.lastname as lastname, u.firstname, u.statut, u.login, u.admin, u.entity";
-	if (isModEnabled('multicompany') && $conf->entity == 1 && $user->admin && ! $user->entity)
-	{
-		$sql.= ", e.label";
-	}
+if (isModEnabled('multicompany') && $conf->entity == 1 && $user->admin && ! $user->entity) {
+	$sql.= ", e.label";
+}
 	$sql.= " FROM ".MAIN_DB_PREFIX ."user as u";
-	if (isModEnabled('multicompany') && $conf->entity == 1 && $user->admin && ! $user->entity)
-	{
-		$sql.= " LEFT JOIN ".MAIN_DB_PREFIX ."entity as e ON e.rowid=u.entity";
-		if ($force_entity) $sql.= " WHERE u.entity IN (0,".$force_entity.")";
-		else $sql.= " WHERE u.entity IS NOT NULL";
+if (isModEnabled('multicompany') && $conf->entity == 1 && $user->admin && ! $user->entity) {
+	$sql.= " LEFT JOIN ".MAIN_DB_PREFIX ."entity as e ON e.rowid=u.entity";
+	if ($force_entity) $sql.= " WHERE u.entity IN (0,".$force_entity.")";
+	else $sql.= " WHERE u.entity IS NOT NULL";
+} else {
+	if (getDolGlobalString('MULTICOMPANY_TRANSVERSE_MODE')) {
+		$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."usergroup_user as ug";
+		$sql.= " ON ug.fk_user = u.rowid";
+		$sql.= " WHERE ug.entity = ".$conf->entity;
+	} else {
+		$sql.= " WHERE u.entity IN (0,".$conf->entity.")";
 	}
-	else
-	{
-		if (getDolGlobalString('MULTICOMPANY_TRANSVERSE_MODE'))
-		{
-			$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."usergroup_user as ug";
-			$sql.= " ON ug.fk_user = u.rowid";
-			$sql.= " WHERE ug.entity = ".$conf->entity;
-		}
-		else
-		{
-			$sql.= " WHERE u.entity IN (0,".$conf->entity.")";
-		}
-	}
+}
 
-	if (!empty($user->socid)) {
-		$sql.= " AND u.fk_soc = ".$user->socid;
-	}
+if (!empty($user->socid)) {
+	$sql.= " AND u.fk_soc = ".$user->socid;
+}
 	if (getDolGlobalString('USER_HIDE_INACTIVE_IN_COMBOBOX')) $sql.= " AND u.statut <> 0";
 
-	if(!getDolGlobalString('MAIN_FIRSTNAME_NAME_POSITION')){
-		$sql.= " ORDER BY u.firstname ASC";
-	}else{
-		$sql.= " ORDER BY u.lastname ASC";
-	}
+if (!getDolGlobalString('MAIN_FIRSTNAME_NAME_POSITION')) {
+	$sql.= " ORDER BY u.firstname ASC";
+} else {
+	$sql.= " ORDER BY u.lastname ASC";
+}
 
 	$resUser = $db->query($sql);
 	$userstatic=new User($db);
 
-	while($objUser = $db->fetch_object($resUser)) {
-		$userstatic->id=$objUser->rowid;
-		$userstatic->lastname=$objUser->lastname;
-		$userstatic->firstname=$objUser->firstname;
+while ($objUser = $db->fetch_object($resUser)) {
+	$userstatic->id=$objUser->rowid;
+	$userstatic->lastname=$objUser->lastname;
+	$userstatic->firstname=$objUser->firstname;
 
-		$TUserToSelect[$userstatic->id] = $userstatic->getFullName($langs,0,-1,80);
-
-	}
+	$TUserToSelect[$userstatic->id] = $userstatic->getFullName($langs, 0, -1, 80);
+}
 	//var_dump($TUserToSelect);
 
-	$select_user = $form->multiselectarray('fk_user', $TUserToSelect,array($user->id), 0,0,'minwidth300');
+	$select_user = $form->multiselectarray('fk_user', $TUserToSelect, array($user->id), 0, 0, 'minwidth300');
 
 	ob_start();
-	if(versioncompare(versiondolibarrarray(), array(20)) >= 0) {
-		echo $form->select_contact(-1, -1, 'contactid', 1, '', '', 0, 'minwidth200'); // contactid car nom non pris en compte par l'ajax en vers.<3.9
-	} else {
-		$form->select_contacts(-1, -1, 'contactid', 1, '', '', 0, 'minwidth200'); // contactid car nom non pris en compte par l'ajax en vers.<3.9
-	}
+if (versioncompare(versiondolibarrarray(), array(20)) >= 0) {
+	echo $form->select_contact(-1, -1, 'contactid', 1, '', '', 0, 'minwidth200'); // contactid car nom non pris en compte par l'ajax en vers.<3.9
+} else {
+	$form->select_contacts(-1, -1, 'contactid', 1, '', '', 0, 'minwidth200'); // contactid car nom non pris en compte par l'ajax en vers.<3.9
+}
 	$select_contact = ob_get_clean();
 
 	if (getDolGlobalString('FULLCALENDAR_SHOW_INTERVENTION')) {
@@ -136,23 +142,22 @@ header('Content-Type: text/javascript');
 
 	$defaultDay = date('d');
 
-	if(getDolGlobalString('MAIN_DEFAULT_WORKING_HOURS')) {
-		list($hourStart, $hourEnd) = explode('-', getDolGlobalString('MAIN_DEFAULT_WORKING_HOURS'));
-	}
-	if(empty($hourStart)) $hourStart = 8;
-	if(empty($hourEnd)) $hourEnd = 18;
+if (getDolGlobalString('MAIN_DEFAULT_WORKING_HOURS')) {
+	list($hourStart, $hourEnd) = explode('-', getDolGlobalString('MAIN_DEFAULT_WORKING_HOURS'));
+}
+	if (empty($hourStart)) $hourStart = 8;
+	if (empty($hourEnd)) $hourEnd = 18;
 
 	$moreOptions = '';
 	$hookmanager->initHooks(array('fullcalendardao'));
 	$parameters=array(); $action = 'addEvent'; $object = null;
-	$reshook=$hookmanager->executeHooks('addOptionCalendarEvents',$parameters,$object,$action);
+	$reshook=$hookmanager->executeHooks('addOptionCalendarEvents', $parameters, $object, $action);
 	if (! empty($hookmanager->resPrint)) $moreOptions = json_decode($hookmanager->resPrint);
 
-	if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE'))
-	{
-		dol_include_once('/core/class/html.formcompany.class.php');
-		$formcompany = new FormCompany($db);
-	}
+if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE')) {
+	dol_include_once('/core/class/html.formcompany.class.php');
+	$formcompany = new FormCompany($db);
+}
 
 ?>
 	var token = '<?php echo $newToken; ?>';
@@ -192,13 +197,13 @@ header('Content-Type: text/javascript');
 
 
 		<?php if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE')) { ?>
-            <?php if (floatval(DOL_VERSION) <= 17) { ?>
-                var select_departement = <?php echo json_encode('<tr><td>'.fieldLabel('State','state_id').'</td><td>'.$formcompany->select_state(GETPOST('state_id', 'int'), 'FR').'</td></tr>'); ?>;
-                $("#selectstatus").closest("tr").after(select_departement);
-            <?php } else { ?>
-                var select_departement = <?php echo json_encode('<div class="divsearchfield">'.fieldLabel('State','state_id').' '.$formcompany->select_state(GETPOST('state_id', 'int'), 'FR').'</div>'); ?>;
-                $('#selectsearch_status').closest('div').after(select_departement);
-            <?php } ?>
+			<?php if (floatval(DOL_VERSION) <= 17) { ?>
+				var select_departement = <?php echo json_encode('<tr><td>'.fieldLabel('State', 'state_id').'</td><td>'.$formcompany->select_state(GETPOST('state_id', 'int'), 'FR').'</td></tr>'); ?>;
+				$("#selectstatus").closest("tr").after(select_departement);
+			<?php } else { ?>
+				var select_departement = <?php echo json_encode('<div class="divsearchfield">'.fieldLabel('State', 'state_id').' '.$formcompany->select_state(GETPOST('state_id', 'int'), 'FR').'</div>'); ?>;
+				$('#selectsearch_status').closest('div').after(select_departement);
+			<?php } ?>
 		<?php } ?>
 
 			var $form_selector = $('form#searchFormList');
@@ -214,13 +219,13 @@ header('Content-Type: text/javascript');
 		if($('form.listactionsfilter input[name=mode]').val() == 'show_week') defaultView = 'agendaWeek';
 		if($('form.listactionsfilter input[name=mode]').val() == 'show_day') defaultView = 'agendaDay';
 
-		$('head').append('<link rel="stylesheet" href="<?php echo dol_buildpath('/fullcalendar/lib/fullcalendar/dist/fullcalendar.min.css',1) ?>" type="text/css" />');
-		$('head').append('<link rel="stylesheet" href="<?php echo dol_buildpath('/fullcalendar/css/fullcalendar.css',1) ?>" type="text/css" />');
+		$('head').append('<link rel="stylesheet" href="<?php echo dol_buildpath('/fullcalendar/lib/fullcalendar/dist/fullcalendar.min.css', 1) ?>" type="text/css" />');
+		$('head').append('<link rel="stylesheet" href="<?php echo dol_buildpath('/fullcalendar/css/fullcalendar.css', 1) ?>" type="text/css" />');
 		$('table.cal_month').hide();
 		$('table.cal_month').prev('table').find('td.titre_right').remove();
 
 		$('table.cal_month').after('<div id="fullcalendar"></div>');
-		var currentsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php',1) ?>'+'?'+$form_selector.serialize();
+		var currentsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'+'?'+$form_selector.serialize();
 
 
 		$('#fullcalendar').fullCalendar({
@@ -236,27 +241,26 @@ header('Content-Type: text/javascript');
 				,dow:[1,2,3,4,5]
 			}
 			<?php
-				if(getDolGlobalString('FULLCALENDAR_SHOW_THIS_HOURS')) {
-						list($hourShowStart, $hourShowEnd) = explode('-', getDolGlobalString('FULLCALENDAR_SHOW_THIS_HOURS'));
-						if(!empty($hourShowStart) && !empty($hourShowEnd)) {
-							?>,minTime:'<?php echo $hourShowStart.':00:00'; ?>'
+			if (getDolGlobalString('FULLCALENDAR_SHOW_THIS_HOURS')) {
+					list($hourShowStart, $hourShowEnd) = explode('-', getDolGlobalString('FULLCALENDAR_SHOW_THIS_HOURS'));
+				if (!empty($hourShowStart) && !empty($hourShowEnd)) {
+					?>,minTime:'<?php echo $hourShowStart.':00:00'; ?>'
 							,maxTime:'<?php echo $hourShowEnd.':00:00'; ?>'<?php
-						}
 				}
+			}
 
-		   /* if(!empty($user->array_options['options_googlecalendarapi'])) {
-		    	?>
-		    	,googleCalendarApiKey: '<?php echo $user->array_options['options_googlecalendarapi']; ?>'
-		    	,eventSources: [
-	            	{
-	                	googleCalendarId: '<?php echo $user->array_options['options_googlecalendarurl']; ?>'
-	            	}
-	            ]
-		    	<?php
-		    }*/
+			/* if(!empty($user->array_options['options_googlecalendarapi'])) {
+				?>
+				,googleCalendarApiKey: '<?php echo $user->array_options['options_googlecalendarapi']; ?>'
+				,eventSources: [
+					{
+						googleCalendarId: '<?php echo $user->array_options['options_googlecalendarurl']; ?>'
+					}
+				]
+				<?php
+			}*/
 
-			if(getDolGlobalString('FULLCALENDAR_DURATION_SLOT')) {
-
+			if (getDolGlobalString('FULLCALENDAR_DURATION_SLOT')) {
 				echo ',slotDuration:"' . getDolGlobalString('FULLCALENDAR_DURATION_SLOT').'"';
 			}
 
@@ -282,12 +286,11 @@ header('Content-Type: text/javascript');
 				}
 			}
 			<?php
-				if(getDolGlobalString('FULLCALENDAR_HIDE_DAYS')) {
-
-					?>
+			if (getDolGlobalString('FULLCALENDAR_HIDE_DAYS')) {
+				?>
 					,hiddenDays: [ <?php echo getDolGlobalString('FULLCALENDAR_HIDE_DAYS') ?> ]
 					<?php
-				}
+			}
 			?>
 			,eventAfterRender:function( event, element, view ) {
 
@@ -349,8 +352,7 @@ header('Content-Type: text/javascript');
 				if(event.note)
 				{
 					<?php
-					if(getDolGlobalString('FULLCALENDAR_SHOW_EVENT_DESCRIPTION'))
-					{
+					if (getDolGlobalString('FULLCALENDAR_SHOW_EVENT_DESCRIPTION')) {
 						?>
 						element.append('<div style="z-index:3;position:relative;">' + event.note + '</div>');
 						<?php
@@ -368,19 +370,16 @@ header('Content-Type: text/javascript');
 					 note += '<div>'+event.contact+'</div>';
 				}
 				<?php
-				if(getDolGlobalString('FULLCALENDAR_SHOW_AFFECTED_USER')) {
-
+				if (getDolGlobalString('FULLCALENDAR_SHOW_AFFECTED_USER')) {
 					?>
 					if(event.fk_user>0){
 						 element.append('<div style="z-index:3;position:relative;">'+event.user+'</div>');
 						 note += '<div style="z-index:3;position:relative;">'+event.user+'</div>';
 					}
 					<?php
-
 				}
 
-				if(getDolGlobalString('FULLCALENDAR_SHOW_PROJECT')) {
-
+				if (getDolGlobalString('FULLCALENDAR_SHOW_PROJECT')) {
 					?>
 					if(event.fk_project>0){
 						 element.append('<div style="z-index:3;position:relative;">'+event.project+'</div>');
@@ -399,7 +398,7 @@ header('Content-Type: text/javascript');
 					<?php
 				}
 
-				if(getDolGlobalString('FULLCALENDAR_SHOW_ORDER')) {
+				if (getDolGlobalString('FULLCALENDAR_SHOW_ORDER')) {
 
 					?>
 					if(event.fk_project>0 && event.fk_project_order>0){
@@ -407,7 +406,6 @@ header('Content-Type: text/javascript');
 						 note = '<div style="z-index:3;position:relative;">'+event.project_order+'</div>'+note;
 					}
 					<?php
-
 				}
 
 
@@ -421,7 +419,11 @@ header('Content-Type: text/javascript');
 					note = note+'<div style="z-index:3;position:relative;"><span class="badge badge-info"><?php print addslashes($langs->transnoentities('FullDayEventSplited')); ?></span></div>';
 				}
 
-				element.prepend('<div style="float:right;">'+event.statut+'</div>');
+				<?php
+				if(getDolGlobalString('FULLCALENDAR_SHOW_EVENT_STATUS')) {
+				?>
+					element.prepend('<div style="float:right;">'+event.statut+'</div>');
+				<?php } ?>
 
 				if ($().tipTip) // ou $.fn.tipTip, mais $.tipTip ne fonctionne pas
 				{
@@ -468,7 +470,7 @@ header('Content-Type: text/javascript');
 				}
 
 				$.ajax({
-					url:'<?php echo dol_buildpath('/fullcalendar/script/interface.php',1) ?>'
+					url:'<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'
 					,data:{
 						put:'event-move'
 						,id:event.id
@@ -490,7 +492,7 @@ header('Content-Type: text/javascript');
 				}
 
 				$.ajax({
-					url:'<?php echo dol_buildpath('/fullcalendar/script/interface.php',1) ?>'
+					url:'<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'
 					,data:{
 						put:'event-resize'
 						,id:event.id
@@ -504,7 +506,7 @@ header('Content-Type: text/javascript');
 			}
 			,dayClick:function( date, jsEvent, view, calEvent) {
 				console.log(date.format());
-				//document.location.href = "<?php echo dol_buildpath('/comm/action/card.php?action=create',1); ?>"
+				//document.location.href = "<?php echo dol_buildpath('/comm/action/card.php?action=create', 1); ?>"
 				showPopIn(date, calEvent);
 
 			}
@@ -539,7 +541,7 @@ header('Content-Type: text/javascript');
 			$currentMonth.val($date.getMonth()+1);
 			$currentDay.val($date.getDate());
 
-			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php',1) ?>'+'?'+$form_selector.serialize();
+			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'+'?'+$form_selector.serialize();
 			$('#fullcalendar').fullCalendar('removeEvents');
 			$('#fullcalendar').fullCalendar('removeEventSource', currentsource);
 			$('#fullcalendar').fullCalendar( 'addEventSource', newsource);
@@ -572,7 +574,7 @@ header('Content-Type: text/javascript');
 				var newDate = new Date(
 					$date.getMonth() == 0 ? $date.getFullYear()-1 : $date.getFullYear()
 					, $date.getMonth() == 0 ? 11 : $date.getMonth()-1
-					, $date.getDate()
+					, 1
 				);
 				console.log('prevMonth', newDate.toDateString())
 			}
@@ -592,7 +594,7 @@ header('Content-Type: text/javascript');
 			$currentMonth.val(newDate.getMonth()+1);
 			$currentDay.val(newDate.getDate());
 
-			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php',1) ?>'+'?'+$form_selector.serialize();
+			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'+'?'+$form_selector.serialize();
 			$('#fullcalendar').fullCalendar('removeEvents');
 			$('#fullcalendar').fullCalendar('removeEventSource', currentsource);
 			$('#fullcalendar').fullCalendar( 'addEventSource', newsource);
@@ -616,7 +618,7 @@ header('Content-Type: text/javascript');
 				var newDate = new Date(
 					$date.getMonth() == 11 ? $date.getFullYear()+1 : $date.getFullYear()
 					, $date.getMonth() == 11 ? 0 : $date.getMonth()+1
-					, $date.getDate()
+					, 1
 				);
 				console.log('nextMonth', newDate.toDateString())
 			}
@@ -630,7 +632,7 @@ header('Content-Type: text/javascript');
 			$currentMonth.val(newDate.getMonth()+1);
 			$currentDay.val(newDate.getDate());
 
-			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php',1) ?>'+'?'+$form_selector.serialize();
+			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'+'?'+$form_selector.serialize();
 			$('#fullcalendar').fullCalendar('removeEvents');
 			$('#fullcalendar').fullCalendar('removeEventSource', currentsource);
 			$('#fullcalendar').fullCalendar( 'addEventSource', newsource);
@@ -695,17 +697,16 @@ header('Content-Type: text/javascript');
 			$form = $('<form name="action"></form>');
 			/*TODO better display */
 			$form.append('<?php echo dol_escape_js($select_type_action, 3); ?>');
-			var selectedText ='<?php echo dol_escape_js($selectedText ); ?>';
+			var selectedText ='<?php echo dol_escape_js($selectedText); ?>';
 			$form.append('<br /><input type="text" id="label_event" name="label" value="' + selectedText + '" placeholder="<?php echo $langs->trans('Title') ?>" style="width:300px"><br />');
 
 			$form.append('<br /><?php echo $langs->trans("DateActionStart")?> : ');
-			$form.append(<?php echo json_encode($form->select_date(0,'ap',1,1,0,"action",1,0,1,0,'fulldayend')); ?>);
+			$form.append(<?php echo json_encode($form->select_date(0, 'ap', 1, 1, 0, "action", 1, 0, 1, 0, 'fulldayend')); ?>);
 
 			$form.append('<br /><?php echo $langs->trans("DateActionEnd") ?> : ');
-			$form.append(<?php echo json_encode($form->select_date(0,'p2',1,1,0,"action",1,0,1,0,'fulldayend')); ?>);
+			$form.append(<?php echo json_encode($form->select_date(0, 'p2', 1, 1, 0, "action", 1, 0, 1, 0, 'fulldayend')); ?>);
 
-			<?php if(getDolGlobalString('FULLCALENDAR_PREFILL_DATETIMES')) { ?>
-
+			<?php if (getDolGlobalString('FULLCALENDAR_PREFILL_DATETIMES')) { ?>
 			$form.append('<br />Pré-remplissage : <a href="javascript:;" class="prefillDate" id="prefillDateMorning">Matin</a> | ');
 			$form.append(' <a href class="prefillDate" id="prefillDateAfternoon">Après-midi</a> | ');
 			$form.append(' <a href class="prefillDate" id="prefillDateDay">Journée</a><br />');
@@ -776,14 +777,14 @@ header('Content-Type: text/javascript');
 
 			<?php }
 
-				$doleditor=new DolEditor('note', '','',200,'dolibarr_notes','In',true,true,isModEnabled('fckeditor'),ROWS_5,90);
+				$doleditor=new DolEditor('note', '', '', 200, 'dolibarr_notes', 'In', true, true, isModEnabled('fckeditor'), ROWS_5, 90);
 				$fullcalendar_note = $doleditor->Create(1);
 			?>
 			$form.append('<br />'+<?php echo json_encode($fullcalendar_note); ?>);
 
 			<?php if (getDolGlobalString('FULLCALENDAR_CAN_UPDATE_PERCENT')) { ?>
 			$form.append('<br /><?php echo $langs->trans('Status').' / '.$langs->trans('Percentage') ?> :');
-			$form.append(<?php ob_start(); $formactions->form_select_status_action('formaction','0',1); $html_percent = ob_get_clean(); echo json_encode($html_percent); ?>);
+			$form.append(<?php ob_start(); $formactions->form_select_status_action('formaction', '0', 1); $html_percent = ob_get_clean(); echo json_encode($html_percent); ?>);
 			<?php } ?>
 
 			$form.append('<br /><?php echo $langs->trans('Company'); ?> : ');
@@ -794,8 +795,7 @@ header('Content-Type: text/javascript');
 			$form.append(<?php echo json_encode($select_user); ?>);
 			<?php
 
-			if(getDolGlobalString('FULLCALENDAR_SHOW_PROJECT')) {
-
+			if (getDolGlobalString('FULLCALENDAR_SHOW_PROJECT')) {
 				?>
 				$form.append('<br /><?php echo $langs->trans('Project'); ?> : ');
 				$form.append(<?php echo json_encode($select_project); ?>);
@@ -888,18 +888,14 @@ header('Content-Type: text/javascript');
 				$reminderparameters.append(<?php echo json_encode($script); ?>);
 				$form.append($reminderparameters);
 				<?php
-
 			}
 
-			if(!empty($moreOptions)) {
-
-				foreach ($moreOptions as $param => $option)
-				{
-				?>
+			if (!empty($moreOptions)) {
+				foreach ($moreOptions as $param => $option) {
+					?>
 					$form.append('<br />'+<?php echo json_encode($option); ?>);
-				<?php
+					<?php
 				}
-
 			}
 			?>
 
@@ -907,7 +903,7 @@ header('Content-Type: text/javascript');
 				var fk_soc = $(this).val();
 
 				$.ajax({
-					url: "<?php echo dol_buildpath('/core/ajax/contacts.php?action=getContacts&htmlname=contactid&showempty=1&token='.$newToken,1) ?>&id="+fk_soc
+					url: "<?php echo dol_buildpath('/core/ajax/contacts.php?action=getContacts&htmlname=contactid&showempty=1&token='.$newToken, 1) ?>&id="+fk_soc
 					,dataType:'json'
 					,token: token
 				}).done(function(data) {
@@ -1081,11 +1077,10 @@ header('Content-Type: text/javascript');
 
 <?php
 	$parameters=array(); $action = 'showPopIn'; $object = null;
-	$reshook=$hookmanager->executeHooks('addShowPopInBehaviour',$parameters,$object,$action);
-	if ($reshook >= 0 && ! empty($hookmanager->resPrint))
-	{
-		print $hookmanager->resPrint;
-	}
+	$reshook=$hookmanager->executeHooks('addShowPopInBehaviour', $parameters, $object, $action);
+if ($reshook >= 0 && ! empty($hookmanager->resPrint)) {
+	print $hookmanager->resPrint;
+}
 ?>
 			}
 			<?php if (getDolGlobalString('FULLCALENDAR_SHOW_INTERVENTION')): ?>
@@ -1102,7 +1097,7 @@ header('Content-Type: text/javascript');
 
 			if(!editable) {
 			//un peu violent mais quand pas le droit d'édition c'est le plus simple
-				window.open("<?php echo dol_buildpath('/comm/action/card.php',1) ?>?id="+calEvent.id);
+				window.open("<?php echo dol_buildpath('/comm/action/card.php', 1) ?>?id="+calEvent.id);
 				return false;
 			}
 
@@ -1144,8 +1139,7 @@ header('Content-Type: text/javascript');
 
 			var title_dialog = "<?php echo $langs->transnoentities('AddAnAction') ?>";
 			var bt_add_lang = "<?php echo $langs->transnoentities('Add'); ?>";
-
-			if (calEvent?.object?.id != null)
+			if (calEvent?.id != null)
 			{
 				title_dialog = "<?php echo $langs->transnoentities('EditAnAction') ?>";
 				bt_add_lang = "<?php echo $langs->transnoentities('Update'); ?>";
@@ -1173,7 +1167,7 @@ header('Content-Type: text/javascript');
 
 								$.ajax({
 									method: 'POST'
-									,url:'<?php echo dol_buildpath('/fullcalendar/script/interface.php',1) ?>'
+									,url:'<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'
 									,data:{
 										put:'event'
 										,id:$('#pop-new-event input[name=id]').val()
@@ -1190,16 +1184,14 @@ header('Content-Type: text/javascript');
 										,type_code:$('#pop-new-event select[name=type_code]').val()
 										,date_start:$('#pop-new-event #apyear').val()+'-'+$('#pop-new-event #apmonth').val()+'-'+$('#pop-new-event #apday').val()+' '+$('#pop-new-event #aphour').val()+':'+$('#pop-new-event #apmin').val()+':00'
 										,date_end:$('#pop-new-event #p2year').val()+'-'+$('#pop-new-event #p2month').val()+'-'+$('#pop-new-event #p2day').val()+' '+$('#pop-new-event #p2hour').val()+':'+$('#pop-new-event #p2min').val()+':00'
-                                        ,token: token
-                                        <?php if (getDolGlobalString('FULLCALENDAR_CAN_UPDATE_PERCENT')) { ?>
+										,token: token
+										<?php if (getDolGlobalString('FULLCALENDAR_CAN_UPDATE_PERCENT')) { ?>
 										,complete:$('#pop-new-event select[name=complete]').val()
 										,percentage:$('#pop-new-event input[name=percentage]').val()
 										<?php } ?>
 										<?php
-										if(!empty($moreOptions)) {
-
-											foreach ($moreOptions as $param => $option)
-											{
+										if (!empty($moreOptions)) {
+											foreach ($moreOptions as $param => $option) {
 												echo ','.$param.':$("#pop-new-event select[name='.$param.']").val()';
 											}
 										}
@@ -1207,8 +1199,7 @@ header('Content-Type: text/javascript');
 										 * conf disponible en 13.0
 										 * envoie des données servant à créer les notifs
 										 */
-										if (getDolGlobalString('AGENDA_REMINDER_EMAIL') || getDolGlobalString('AGENDA_REMINDER_BROWSER'))
-										{
+										if (getDolGlobalString('AGENDA_REMINDER_EMAIL') || getDolGlobalString('AGENDA_REMINDER_BROWSER')) {
 											?>
 												,setReminder: $('#pop-new-event input[name=addreminder]').prop('checked') == false ? 0 : 1
 												,reminderValue:$('#pop-new-event input[name=offsetvalue]').val()
@@ -1388,29 +1379,28 @@ header('Content-Type: text/javascript');
 		$form_selector.submit(function(event) {
 			console.log($form_selector.serialize() );
 			console.log($('#fullcalendar'));
-			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php',1) ?>'+'?'+$form_selector.serialize();
+			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php', 1) ?>'+'?'+$form_selector.serialize();
 			$('#fullcalendar').fullCalendar('removeEvents');
 			$('#fullcalendar').fullCalendar('removeEventSource', currentsource);
 			$('#fullcalendar').fullCalendar( 'addEventSource', newsource);
 			currentsource = newsource;
 			event.preventDefault();
-			var url = '<?php echo dol_buildpath('/comm/action/index.php',1) ?>?'+$form_selector.serialize() ;
+			var url = '<?php echo dol_buildpath('/comm/action/index.php', 1) ?>?'+$form_selector.serialize() ;
 			history.pushState("FullCalendar","FullCalendar", url)
 
 			var $a = $('table[summary=bookmarkstable] a.vsmenu[href*=create]');
-			$a.attr('href',"<?php echo dol_buildpath('/bookmarks/card.php',1)  ?>?action=create&url_source="+encodeURIComponent(url)+"&url="+encodeURIComponent(url));
-			$('option[value=newbookmark]').attr("rel","<?php echo dol_buildpath('/bookmarks/card.php',1) ?>?action=create&url="+encodeURIComponent(url));
+			$a.attr('href',"<?php echo dol_buildpath('/bookmarks/card.php', 1)  ?>?action=create&url_source="+encodeURIComponent(url)+"&url="+encodeURIComponent(url));
+			$('option[value=newbookmark]').attr("rel","<?php echo dol_buildpath('/bookmarks/card.php', 1) ?>?action=create&url="+encodeURIComponent(url));
 
 		});
 
 
 <?php
-	if(! empty($conf->use_javascript_ajax))
-	{
-?>
+if (! empty($conf->use_javascript_ajax)) {
+	?>
 		$('#actioncode, #projectid').select2({ width: '100%' });
-<?php
-	}
+	<?php
+}
 ?>
 
 		$('#fullcalendar').attr('data-loaded', 'true');
