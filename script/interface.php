@@ -282,11 +282,23 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 			$a->datef = dol_mktime(date("H", $timestamp_end), date("i", $timestamp_end), date("s", $timestamp_end), date("n", $timestamp_end),  date("j", $timestamp_end), date("Y", $timestamp_end), 'tzuserrel');
 
 			$TUser = GETPOST('fk_user', 'none');
-			if(empty($TUser)) $TUser = [];
-			$TUser[] = $user->id;
-			if(!is_array($TUser))$TUser=array($TUser);
 
-			$a->userownerid = $user->id;
+			if (empty($TUser)) {
+				$TUser = [];
+				// FIXED : we don't want the editor of an action comm to be attached to the action comm
+				// so current user must not be added to $TUser which is used a few lines later to set $a->userassigned
+				// $TUser[] = $user->id;
+			}
+
+			if (!is_array($TUser))$TUser=array($TUser);
+
+			// FIXED : we don't want the editor of an actioncomm to be automatically attached to the actioncomm
+			// because $a->userownerid is used on ActionComm::update() to set fk_user_action of the actioncomm
+			// so, $a->userownerid must be set only when its an actioncomm creation
+			// Consequence : user owner can not be changed after actioncomm creation
+			if ($a->userownerid <= 0) {
+				$a->userownerid = $user->id;
+			}
 			$a->type_code = GETPOST('type_code', 'none') ? GETPOST('type_code', 'none') : 'AC_OTH';
 			$a->code = $a->type_code; // Up to Dolibarr 3.4, code is used in ActionComm:add() instead of type_code. It's seems unused, but you never know for sure.
 			$a->fk_action = dol_getIdFromCode($db, $a->type_code, 'c_actioncomm'); // type_code is not saved in ActionComm::update(), fk_action is up to Dolibarr 6.0
@@ -659,7 +671,7 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 	$end_range_timestamp = dol_mktime(23, 59, 59, $month, 28, $year) + (60 * 60 * 24 * 14); // End 14 days after 28, because its the max number of days of next month that can be displaid (case of february 2021 by example)
 
 	$sql .= " AND (";
-	$sql .= " (a.datep BETWEEN '" . $db->idate($start_range_timestamp) . "'"; 
+	$sql .= " (a.datep BETWEEN '" . $db->idate($start_range_timestamp) . "'";
 	$sql .= " AND '" . $db->idate($end_range_timestamp) . "')";
 	$sql .= " OR ";
 	$sql .= " (a.datep2 BETWEEN '" . $db->idate($start_range_timestamp) . "'";
