@@ -3,7 +3,27 @@ All notable changes to this project will be documented in this file.
 
 ## Not Released
 
+## Release 2.9
+- FIX : T6651 - Empty event type option no longer hides every event, and event type codes are sanitized before the SQL filter - *30/07/2026* - 2.9.5
+- FIX : T6651 - Bookmark created from agenda did not keep the active search filters - *10/07/2026* - 2.9.4
+- FIX : T6651 - Calendar tooltips showed placeholder "tocomplete" when MAIN_ENABLE_AJAX_TOOLTIP is enabled - *10/07/2026* - 2.9.3
+- FIX : T6651 - Event type filter ignored in calendar view when multiselect type is enabled - *10/07/2026* - 2.9.2
+- FIX : Compat V24 - audited against Dolibarr v24, already compatible (no code change) - *10/06/2026* - 2.9.1
+    + Error when displaying fullcalendar calendar
+- FIX: Remove mandatory ABRICOT framework dependency from module bootstrap and activation. - *21/05/2026* - 2.9.0
+
+## Release 2.8
+- NEW : COMPAT V23 - *01/04/2026* -2.8
+
 ## Release 2.7
+- FIX : Allow HTML content in task description (NOSCANPOSTFORINJECTION + GET→POST AJAX) - *29/05/2026* - 2.7.29
+- FIX : DA028181 - Events not visible in calendar - *07/04/2026* - 2.7.28
+- FIX : Clean JSON data security issue - *03/03/2026* - 2.7.27
+- FIX : Force withproject=1 on task links from fullcalendar to avoid slow prev/next on large datasets - *24/02/2026* - 2.7.26
+- FIX : PR#158 - add an option to show the status on event box - *20/02/2026* - 2.7.25
+- FIX : PR#164 - navigate to next/previous month false month in interface.php - *12/02/2026* - 2.7.24
+- FIX: COMPATV23 - *30/12/2025* -2.7.23
+- FIX: Compatibility Multi Company - *27/01/2026* - 2.7.22
 - FIX: DA027274 + issue#167 - Change the timezone output to display correct hours - *31/10/2025* - 2.7.21 
 - FIX: DA027282 - Change in how to fix the problem of not desired data in the object event - *31/10/2025* - 2.7.20
 - FIX: DA027282 - Data not desired in the object - *30/10/2025* - 2.7.19
