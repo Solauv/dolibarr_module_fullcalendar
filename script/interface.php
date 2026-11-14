@@ -1,6 +1,22 @@
 <?php
+/* Copyright (C) 2025 ATM Consulting
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 global $user;
 if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token renewal
+if (!defined('NOSCANPOSTFORINJECTION')) define('NOSCANPOSTFORINJECTION', 1); // Allow HTML content in task description
 
 	require '../config.php';
     require_once DOL_DOCUMENT_ROOT.'/comm/action/class/actioncomm.class.php';
@@ -23,6 +39,12 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 
 	$form = new Form($db);
 	$formother = new FormOther($db);
+
+	// This endpoint returns HTML fragments injected into FullCalendar events/tooltips, where the core
+	// AJAX tooltip handler (class "classforajaxtooltip") is never bound. When MAIN_ENABLE_AJAX_TOOLTIP is
+	// enabled, getNomUrl() emits a placeholder title="tocomplete" that shows up on hover. Force classic
+	// tooltips ("classfortooltip", already rebound by fullcalendar.js.php) so links show their real label.
+	$conf->global->MAIN_ENABLE_AJAX_TOOLTIP = 0;
 
 	$get=GETPOST('get', 'none');
 	$put=GETPOST('put', 'none');
@@ -56,7 +78,7 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 
 			$TEvent = _events($start, $end, $month, $year);
 			removeUselessFullcalendarOutputData($TEvent);
-			__out($TEvent, 'json');
+			print json_encode($TEvent);
 
 
 			break;
@@ -65,7 +87,7 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 			$end = GETPOST('end', 'none');
             $TEvent = _tasks($start, $end);
             removeUselessFullcalendarOutputData($TEvent);
-            __out($TEvent, 'json');
+            print json_encode($TEvent);
             break;
         case 'task-popin':
             $fk_task = GETPOST('fk_task','int');
@@ -91,11 +113,9 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 				else $a->fulldayevent = 0;
 
 				$splitedfulldayevent = GETPOST('splitedfulldayevent', 'int');
-				if(!empty($splitedfulldayevent))
-				{
+			if (!empty($splitedfulldayevent)) {
 					$a->fulldayevent = 1;
-				}
-				else{
+			} else {
 					if(!empty($TData['minutes'])) {
 						$a->datep = strtotime($TData['minutes'].' minute', $a->datep);
 					    if (!empty($a->datef)) $a->datef = strtotime($TData['minutes'].' minute', $a->datef);
@@ -115,7 +135,6 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 
 				$res = $a->update($user);
 				addReminders($a, 'drop');
-
 			}
 
 
@@ -175,7 +194,6 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
                         $reshook = $hookmanager->executeHooks('beforeTaskUpdate', $parameters, $task); // Note that $action and $object may have been modified by hook
                         $task->update($user);
                     }
-
                 }
             }
 			break;
@@ -187,12 +205,9 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 				$TData = $_REQUEST['data'];
 
 				$splitedfulldayevent = GETPOST('splitedfulldayevent', 'int');
-				if(!empty($splitedfulldayevent))
-				{
+			if (!empty($splitedfulldayevent)) {
 					$a->fulldayevent = 1;
-				}
-				else{
-
+			} else {
 					if(!empty($TData['minutes'])) {
 						if(empty($a->datef))$a->datef = $a->datep;
 						$a->datef = strtotime($TData['minutes'].' minute', $a->datef);
@@ -213,8 +228,6 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 
 
 				$res = $a->update($user);
-
-
 			}
 
 
@@ -247,8 +260,6 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 
 			$type = getDolGlobalInt('AGENDA_USE_EVENT_TYPE');
 			if (GETPOST('label', 'none') != ""  || $type ){
-
-
 			$a=new ActionComm($db);
 
 			$id = GETPOST('id', 'int');
@@ -317,24 +328,20 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 			$moreParams = GETPOST('moreParams', 'none');
 			$moreParams = explode(',', $moreParams);
 			$TParam = array();
-			foreach ($moreParams as $param)
-			{
+			foreach ($moreParams as $param) {
                 $a->{'_'.$param} = GETPOST($param, 'none');
 			}
 			//var_dump(getDolGlobalString('FULLCALENDAR_SHOW_THIS_HOURS'),GETPOST('date', 'none'),$a);exit;
 
 			if($user->hasRight('agenda', 'allactions', 'create') ||
 					(($a->authorid == $user->id || $a->userownerid == $user->id) && $user->hasRight('agenda', 'myactions', 'create'))) {
-
 				$a->userassigned = array();
 				if(!empty($TUser)) {
 					foreach($TUser as $fk_user) {
 						$a->userassigned[$fk_user] = array('id'=>$fk_user);
 					}
 				}
-
-			}
-			elseif($a->id>0) {
+			} elseif ($a->id>0) {
 				$a->fetch_userassigned();
 			}
 
@@ -346,14 +353,11 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 					$res = $a->add($user);
 					addReminders($a);
 				}
-			}
-			else
-			{
+			} else {
 				if (empty($a->contact_id)) $a->contact = null;
 
 				$res = $a->update($user);
-				if ($res > 0)
-				{
+				if ($res > 0) {
 					$res = $a->id;
 					addReminders($a, 'update');
 				}
@@ -382,13 +386,19 @@ if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1); // Disables token r
 
 			print $res;
 			}else{
-
 				print $langs->trans('labelRequired');
 			}
 			break;
 	}
 
-function _taskEditableView($fk_task) {
+/**
+ * Build the HTML content for the editable task popin.
+ *
+ * @param int $fk_task Task id
+ * @return string HTML content
+ */
+function _taskEditableView($fk_task)
+{
     global $langs, $db, $form, $formother, $hookmanager;
     $task = new Task($db);
     $view = '';
@@ -424,11 +434,12 @@ function _taskEditableView($fk_task) {
 
 
     /**
-     * @param string date $date_start
-     * @param string date $date_end
-     * @return array Task
+ * @param string $date_start Start date (Y-m-d format)
+ * @param string $date_end   End date (Y-m-d format)
+ * @return array List of task events
      */
-function _tasks($date_start, $date_end) {
+function _tasks($date_start, $date_end)
+{
     global $db, $user, $conf, $hookmanager;
     $TEvent = array();
     $task = new Task($db);
@@ -443,7 +454,7 @@ function _tasks($date_start, $date_end) {
     $parameters = array();
     $reshook = $hookmanager->executeHooks('printFieldListSelect', $parameters); // Note that $action and $object may have been modified by hook
     $sql .= $hookmanager->resPrint;
-    $sql .= " FROM ".MAIN_DB_PREFIX.$task->table_element ." as t";
+	$sql .= " FROM ".$db->prefix().$task->table_element ." as t";
     $parameters = array();
     $reshook = $hookmanager->executeHooks('printFieldListJoin', $parameters); // Note that $action and $object may have been modified by hook
     $sql .= $hookmanager->resPrint;
@@ -466,6 +477,7 @@ function _tasks($date_start, $date_end) {
 			$task = new Task($db);
             $res = $task->fetch($obj->rowid);
             if($res > 0) {
+				$task->fetch_optionals();
                 $dateEnd = $task->date_end;
                 if(empty($task->date_end) && ! empty($task->planned_workload)) $dateEnd = $task->date_start + ceil($task->planned_workload);
                 $desc = makeTaskDesc($task, $dateEnd);
@@ -479,7 +491,7 @@ function _tasks($date_start, $date_end) {
                     'allDay' => $allDay,
                     'start' => (empty($task->date_start) ? '' : dol_print_date($task->date_start, '%Y-%m-%d %H:%M:%S')),
                     'end' => (empty($dateEnd) ? '' : dol_print_date($dateEnd, '%Y-%m-%d %H:%M:%S')),
-                    'url_title' => dol_buildpath('/projet/tasks/task.php?id='.$task->id, 1),
+					'url_title' => dol_buildpath('/projet/tasks/task.php?id='.$task->id.'&withproject=1', 1),
                     'editable' =>  $user->hasRight('fullcalendar', 'task','write') ? 1 : 0,
                     'color' => $color,
                     'borderColor' => 'black',
@@ -502,7 +514,15 @@ function _tasks($date_start, $date_end) {
     return $TEvent;
 }
 
-function makeTaskDesc($task, $dateEnd) {
+/**
+ * Build HTML description for a task for the calendar.
+ *
+ * @param Task $task    Task object
+ * @param int  $dateEnd End date timestamp
+ * @return string HTML description
+ */
+function makeTaskDesc($task, $dateEnd)
+{
     global $langs;
     $desc = '<strong>'.$langs->trans('StartDate').' : </strong>'.dol_print_date($task->date_start, 'dayhourtext').'<br/>';
     $desc .= '<strong>'.$langs->trans('EndDate').' : </strong>'.dol_print_date($dateEnd, 'dayhourtext').'<br/>';
@@ -523,7 +543,6 @@ function makeTaskDesc($task, $dateEnd) {
             $task->project->fetch_thirdparty();
             $desc .= '<strong>'.$langs->trans('ThirdParty').' : </strong>'.$task->project->thirdparty->getNomUrl().'<br/>';
         }
-
     }
     $desc .= '<strong>'.$langs->trans('Description').' : </strong>'.$task->description.'<br/>';
     return $desc;
@@ -545,7 +564,8 @@ function makeTaskDesc($task, $dateEnd) {
  *
  * @return array An array of events with details such as id, title, start date, end date, etc.
  */
-function _events($date_start, $date_end, $month=-1, $year=-1) {
+function _events($date_start, $date_end, $month = -1, $year = -1)
+{
 	global $db,$conf,$langs,$user,$hookmanager;
 
 	$hookmanager->initHooks(array('agenda'));
@@ -562,13 +582,31 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 
 	//If empty then try GETPOST(alpha, 'none') (this one works with comm/action/index.php
 	if(empty($actioncode)) {
-
+		// The event type filter is a multiselect (search_actioncode[] => array of codes) when
+		// MAIN_ENABLE_MULTISELECT_TYPE and AGENDA_USE_EVENT_TYPE are enabled, or a scalar otherwise.
+		$actioncodearray = GETPOST("search_actioncode", "array:aZ09", 3);
+		if (empty($actioncodearray)) {
+			$actioncodearray = GETPOST("actioncode", "array:aZ09", 3);
+		}
+		// Drop the "all"/empty sentinels: in single select mode the native filter renders an empty
+		// option with value "-1" (normalized to '' by comm/action/index.php), and comm/action/index.php
+		// itself falls back to '0' when the filter is submitted but empty. Keeping any of them would
+		// build "ca.code IN ('-1')" and hide every event on the default load.
+		$actioncodearray = array_values(array_filter($actioncodearray, function ($value) {
+			return (string) $value !== '' && (string) $value !== '-1' && (string) $value !== '0';
+		}));
+		if (!empty($actioncodearray)) {
+			$actioncode = $actioncodearray;
+		} else {
 		$actioncodetmp =GETPOST("actioncode","alpha",3)?GETPOST("actioncode","alpha",3):(GETPOST("actioncode", 'none')=='0'?'0':'');
         if(empty($actioncodetmp)){
 			$actioncodetmp=GETPOST("search_actioncode", "alpha", 3)?GETPOST("search_actioncode", "alpha", 3):(GETPOST("search_actioncode", 'none')=='0'?'0':'');
         }
-		if($actioncodetmp > 0) $actioncode=array($actioncodetmp);
-
+			// GETPOST(..., 'alpha') returns arrays untouched (every sanitizeVal branch is guarded by
+			// !is_array()), and array(...) > 0 is always true in PHP: without is_scalar() an array input
+			// made only of sentinels rebuilds the nested array and forges "ca.code IN ('Array')".
+			if (is_scalar($actioncodetmp) && $actioncodetmp > 0) $actioncode = array($actioncodetmp);
+		}
 	}
 	if(empty($actioncode)) {
 		$actioncode = array();
@@ -580,8 +618,7 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 	$usergroup = GETPOST("usergroup","int",3);
 	$showbirthday = empty($conf->use_javascript_ajax)?GETPOST("showbirthday","int"):1;
 
-	if (empty($filtert) && !getDolGlobalString('AGENDA_ALL_CALENDARS'))
-	{
+	if (empty($filtert) && !getDolGlobalString('AGENDA_ALL_CALENDARS')) {
 		$filtert=$user->id;
 	}
 	$socid = GETPOSTINT("search_socid") ? GETPOSTINT("search_socid") : GETPOSTINT("socid");
@@ -617,8 +654,7 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 	if ($resourceid > 0) {
 		$sql .= "LEFT JOIN ".$db->prefix()."element_resources as r on r.element_id = a.id";
 	}
-	if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE') && !empty($state_id))
-	{
+	if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE') && !empty($state_id)) {
 		$sql .= ' LEFT JOIN '.$db->prefix().'socpeople sp ON (sp.rowid = a.fk_contact)';
 	}
 
@@ -626,8 +662,8 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 	// We must filter on assignement table
 	if ($filtert > 0 || $usergroup > 0) $sql.=" LEFT JOIN ".$db->prefix()."actioncomm_resources as ar ON (ar.fk_actioncomm = a.id)";
 	if ($usergroup > 0) $sql.= " LEFT JOIN ".$db->prefix()."usergroup_user as ugu ON ugu.fk_user = ar.fk_element";
-
 	$sql.= ' WHERE 1=1';
+			$sql.= " AND a.entity IN (".getEntity('agenda').")";
 	if ($search_categ_cus != -1) {
 		if ($search_categ_cus == -2) {
 			$sql .= " AND NOT EXISTS (SELECT ca.fk_actioncomm FROM ".$db->prefix()."categorie_actioncomm as ca WHERE ca.fk_actioncomm = a.id)";
@@ -640,17 +676,15 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 	}
 
 	if (!empty($actioncode)){
-        $sql.=" AND ( ca.code IN ('".implode("','", $actioncode)."')";
+		$sql.=" AND ( ca.code IN (".$db->sanitize("'".implode("','", $actioncode)."'", 1).")";
 
         if (in_array('AC_NON_AUTO', $actioncode)) $sql .= " OR ca.type != 'systemauto'";
         elseif (in_array('AC_ALL_AUTO', $actioncode)) $sql .= " OR ca.type = 'systemauto'";
-        elseif(!getDolGlobalString('AGENDA_USE_EVENT_TYPE'))
-        {
+		elseif (!getDolGlobalString('AGENDA_USE_EVENT_TYPE')) {
             if (in_array('AC_OTH', $actioncode)) $sql .= " OR ca.type != 'systemauto'";
             if (in_array('AC_OTH_AUTO', $actioncode)) $sql .= " OR ca.type = 'systemauto'";
-        }
-        else {
-            $sql .= " OR ca.code IN ('".implode("','", $actioncode)."')";
+		} else {
+			$sql .= " OR ca.code IN (".$db->sanitize("'".implode("','", $actioncode)."'", 1).")";
         }
 
         $sql.=" )";
@@ -688,8 +722,7 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 	if ($status == 'done' || $status == '100') { $sql.= " AND (a.percent = 100 OR (a.percent = -1 AND a.datep2 <= '".$db->idate($now)."'))"; }
 	if ($status == 'todo') { $sql.= " AND ((a.percent >= 0 AND a.percent < 100) OR (a.percent = -1 AND a.datep2 > '".$db->idate($now)."'))"; }
 	// We must filter on assignement table
-	if ($filtert > 0 || $usergroup > 0)
-	{
+	if ($filtert > 0 || $usergroup > 0) {
 	    $sql.= " AND (";
 	    if ($filtert > 0) $sql.= "ar.fk_element = ".$filtert;
 	    if ($usergroup > 0) $sql.= ($filtert>0?" OR ":"")." ugu.fk_usergroup = ".$usergroup;
@@ -700,7 +733,7 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 
 	$TEvent=array();
 	if(isset($_REQUEST['DEBUG'])) print $sql;
-//echo $sql;exit;
+
 	$res= $db->query($sql);
 
 	$TSociete = array();
@@ -731,7 +764,6 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 		$event->socid = $obj->fk_soc;
 		$event->socname = $obj->socname;
 		$event->userownerid = $obj->fk_user_action;
-		$event->userownerid = $obj->fk_user_action;
 		$event->fk_project = $obj->fk_project;
 		$event->label = $obj->label;
 		$event->note = $obj->note;
@@ -756,8 +788,7 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 		&& getDolGlobalString('FULLCALENDAR_PREFILL_DATETIME_AFTERNOON_END')
 		&& !empty($event->fulldayevent)
 		&& ($event->datef - $event->datep) <= 86400 // ne peut pas le faire sur plusieurs jours
-		)
-		{
+		) {
 			$datep = $event->datep;
 			$datef = $event->datef;
 
@@ -768,7 +799,6 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 			$eventMorning->datep = $datep + _convertTimestampLocalToNoLocalSecond(getDolGlobalString('FULLCALENDAR_PREFILL_DATETIME_MORNING_START')); // Date action start (datep)
 			$eventMorning->datef = $datep + _convertTimestampLocalToNoLocalSecond(getDolGlobalString('FULLCALENDAR_PREFILL_DATETIME_MORNING_END')); // Date action end (datep2)
 			$TEventObject[] = $eventMorning;
-
 
 			// Afternoon
 			$eventAfternoon = clone $event;
@@ -784,19 +814,18 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 	}
 
 	foreach($TEventObject as &$event) {
-
 		if($event->socid>0 && !isset($TSociete[$event->socid])) {
 			$societe = new Societe($db);
 			$societe->fetch($event->socid);
 			$TSociete[$event->socid]  = $societe->getNomUrl(1);
-
 		}
+
 		$eventContactId = $event->contact_id;
+
 		if($eventContactId>0 && !isset($TContact[$eventContactId])) {
             $contact = new Contact($db);
             $contact->fetch($eventContactId);
             $TContact[$eventContactId]  = $contact->getNomUrl(1);
-
         }
 
 		$TUserassigned = array();
@@ -810,7 +839,6 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 		}
 
 		if(getDolGlobalString('FULLCALENDAR_SHOW_AFFECTED_USER') ) {
-
 			$userownerid = (int)$event->userownerid;
 
 			if( $userownerid>0 && !isset($TUser[$userownerid])) {
@@ -826,7 +854,6 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
             $p->fetch($event->fk_project);
             $TProject[$event->fk_project]  = $p->getNomUrl(1);
             $TProjectObject[$event->fk_project]  = $p;
-
         }
 
 		if (getDolGlobalString('FULLCALENDAR_SHOW_INTERVENTION')) {
@@ -852,17 +879,11 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
             }
 
             if(!isset($TProjectObject[$event->fk_project]->fk_project_order)) {
-                // c'est de la merde cette fonction, je custom :: $orders = $TProjectObject[$event->fk_project]->get_element_list('commande','commande');
-
-
-                $res = $db->query("SELECT rowid, ref FROM ".MAIN_DB_PREFIX."commande WHERE fk_projet=".$event->fk_project." ORDER BY date_commande DESC LIMIT 1");
+				$res = $db->query("SELECT rowid, ref FROM ".$db->prefix()."commande WHERE fk_projet=".intval($event->fk_project)." AND entity IN (".getEntity('commande').") ORDER BY date_commande DESC LIMIT 1");
                 if($res===false) {
-                    var_dump($db);exit;
-                }
-                else{
-
-                    dol_include_once('/commande/class/commande.class.php');
-
+					dol_syslog($db->lasterror(), LOG_ERR);
+					continue;
+				} else {dol_include_once('/commande/class/commande.class.php');
                     $obj = $db->fetch_object($res);
                     $o=new Commande($db);
                     $o->id = $obj->rowid;
@@ -870,53 +891,40 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 
                     $event->fk_project_order = $o->id;
                     $event->project_order = $o->getNomUrl(1);
-
                 }
-
             }
-
-
         }
 
 		if(getDolGlobalString('FULLCALENDAR_SHOW_AFFECTED_USER') && !empty($event->userassigned)) {
-
 			foreach($event->userassigned as &$ua) {
 				$userid = (int)$ua['id'];
 				if(!isset($TUser[$userid])) {
 					   $u = new User($db);
             		   $u->fetch($userid);
            			   $TUser[$userid]  = $u;
-
 				}
 				if(!isset($TUserassigned[$userid])) $TUserassigned[] = $TUser[$userid]->getNomUrl(1);
 				if($TUser[$userid]->color && !in_array('#'.$TUser[$userid]->color,$TColor)) $TColor[] = '#'.$TUser[$userid]->color;
-
 			}
-
 		}
 		$editable = false;
 		if(($user->id == $event->userownerid) || $user->hasRight('agenda', 'allactions', 'create')) {
 			$editable = true;
 		}
+
 		$colors='';
-
 		$color='';
-		if(!empty($TColor)) {
 
+		if (!empty($TColor)) {
 			$color = $TColor[0];
 
 			if(getDolGlobalString('FULLCALENDAR_SHOW_ALL_ASSIGNED_COLOR') && count($TColor)>1) {
 				$colors = ' linear-gradient(to right ';
 				foreach($TColor as $c) {
-
 					$colors.= ','.$c;
-
 				}
-
 				$colors.=')';
-
 			}
-
 		}
 		$isAllDay = (bool)($event->fulldayevent);
 
@@ -982,18 +990,15 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 		 * si activées, on tente de récupérer les infos notifs
 		 * sachant que s'il y en a plusieurs, ce qui change c'est juste le fk_user
 		 */
-		if (getDolGlobalString('AGENDA_REMINDER_EMAIL') || getDolGlobalString('AGENDA_REMINDER_BROWSER'))
-		{
-			$sqlremind = "SELECT acr.rowid FROM ".MAIN_DB_PREFIX."actioncomm_reminder acr WHERE acr.fk_actioncomm = ".$event->id;
+		if (getDolGlobalString('AGENDA_REMINDER_EMAIL') || getDolGlobalString('AGENDA_REMINDER_BROWSER')) {
+			$sqlremind = "SELECT acr.rowid FROM ".$db->prefix()."actioncomm_reminder acr WHERE acr.fk_actioncomm = ".$event->id;
 			$resql = $db->query($sqlremind);
-			if ($resql && $db->num_rows($resql))
-			{
+			if ($resql && $db->num_rows($resql)) {
 				$obj = $db->fetch_object($resql);
 
 				$actionCommReminder = new ActionCommReminder($db);
 				$res = $actionCommReminder->fetch($obj->rowid);
-				if ($res > 0)
-				{
+				if ($res > 0) {
 					$tmpEvent['reminder_offsetvalue'] = $actionCommReminder->offsetvalue;
 					$tmpEvent['reminder_offsetunit'] = $actionCommReminder->offsetunit;
 					$tmpEvent['reminder_typeremind'] = $actionCommReminder->typeremind;
@@ -1002,13 +1007,11 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 			}
 		}
 
-		if (getDolGlobalString('COMPANY_USE_SEARCH_TO_SELECT'))
-		{
+		if (getDolGlobalString('COMPANY_USE_SEARCH_TO_SELECT')) {
 			$tmpEvent['socname'] = $event->socname ?? '';
 		}
 
 		$TEvent[] = $tmpEvent;
-
 	}
 
 	//TODO getCalendarEvents compatbile standard
@@ -1032,14 +1035,13 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 		$sql = "SELECT u.rowid as uid, u.lastname, u.firstname, u.statut, u.color as color, x.rowid, x.ref, x.fk_user, x.date_debut as date_start, x.date_fin as date_end, x.halfday, x.statut as status, x.description";
 		$sql .= " FROM " . $db->prefix() . "holiday as x, " . $db->prefix() . "user as u";
 		$sql .= " WHERE u.rowid = x.fk_user";
-		$sql .= " AND u.statut = '1'"; // Show only active users
-		$sql .= " AND (x.statut = '2' OR x.statut = '3')"; // Show only public leaves
-
+		$sql .= " AND u.statut = '".$db->escape(User::STATUS_ENABLED)."'"; // Show only active users
+		$sql .= " AND (x.statut = '".$db->escape(Holiday::STATUS_VALIDATED)."' OR x.statut = '".$db->escape(Holiday::STATUS_APPROVED)."')"; // Show only public leaves
+		$sql .= " AND x.entity IN (".getEntity('holiday').")";
 		$resql = $db->query($sql);
 		if ($resql) {
 			$holiStatus = new Holiday($db);
 			while ($obj = $db->fetch_object($resql)) {
-
 				$res = $holiStatus->fetch($obj->rowid);
 				if ($res){
 					$color = $obj->color;
@@ -1107,10 +1109,16 @@ function _events($date_start, $date_end, $month=-1, $year=-1) {
 	}
 
 	return $TEvent;
-
 }
 
-function isDarkColor($color) {
+/**
+ * Determine if a color is dark based on its lightness.
+ *
+ * @param string $color Hex color string (e.g. "#ffffff")
+ * @return int 1 if dark, 0 otherwise
+ */
+function isDarkColor($color)
+{
 	global $conf;
 
 	$lightness_swap = !getDolGlobalString('FULLCALENDAR_LIGTHNESS_SWAP') ? 150 : getDolGlobalString('FULLCALENDAR_LIGTHNESS_SWAP');
@@ -1121,13 +1129,18 @@ function isDarkColor($color) {
 	return ($hsl->lightness<$lightness_swap) ? 1 : 0;
 }
 
+/**
+ * Convert an HTML hex color to its integer RGB representation.
+ *
+ * @param string $htmlCode Hex color string, with or without leading "#"
+ * @return int Integer RGB value
+ */
 function HTMLToRGB($htmlCode)
   {
     if(strpos($htmlCode, '#') === 0)
       $htmlCode = substr($htmlCode, 1);
 
-    if (strlen($htmlCode) == 3)
-    {
+	if (strlen($htmlCode) == 3) {
         $newhtmlCode = substr($htmlCode, 0, 1).substr($htmlCode, 0, 1).substr($htmlCode, 1, 1).substr($htmlCode, 1, 1).substr($htmlCode, 2, 1).substr($htmlCode, 2, 1);
       $htmlCode = $newhtmlCode;
     }
@@ -1139,7 +1152,14 @@ function HTMLToRGB($htmlCode)
     return $b + ($g << 0x8) + ($r << 0x10);
   }
 
-function RGBToHSL($RGB) {
+/**
+ * Convert an integer RGB value to an HSL object.
+ *
+ * @param int $RGB Integer RGB value
+ * @return stdClass Object with properties hue, saturation and lightness
+ */
+function RGBToHSL($RGB)
+{
     $r = 0xFF & ($RGB >> 0x10);
     $g = 0xFF & ($RGB >> 0x8);
     $b = 0xFF & $RGB;
@@ -1153,19 +1173,13 @@ function RGBToHSL($RGB) {
 
     $l = ($maxC + $minC) / 2.0;
 
-    if($maxC == $minC)
-    {
+	if ($maxC == $minC) {
       $s = 0;
       $h = 0;
-    }
-    else
-    {
-      if($l < .5)
-      {
+	} else {
+		if ($l < .5) {
         $s = ($maxC - $minC) / ($maxC + $minC);
-      }
-      else
-      {
+		} else {
         $s = ($maxC - $minC) / (2.0 - $maxC - $minC);
       }
       if($r == $maxC)
@@ -1188,6 +1202,12 @@ function RGBToHSL($RGB) {
 
 /**
  * Copié collé from Dolibarr "/comm/action/index.php"
+ *
+ * @param array $TEvent    List of events to complete (by reference)
+ * @param array $TSociete  Cache for third parties (by reference)
+ * @param array $TContact  Cache for contacts (by reference)
+ * @param array $TProject  Cache for projects (by reference)
+ * @return void
  */
 function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 {
@@ -1201,19 +1221,16 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 	$MAXAGENDA= getDolGlobalString('AGENDA_EXT_NB');
 
 	// Define list of external calendars (global admin setup)
-	if (!getDolGlobalString('AGENDA_DISABLE_EXT'))
-	{
+	if (!getDolGlobalString('AGENDA_DISABLE_EXT')) {
 		$i=0;
-		while($i < $MAXAGENDA)
-		{
+		while ($i < $MAXAGENDA) {
 			$i++;
 			$source='AGENDA_EXT_SRC'.$i;
 			$name='AGENDA_EXT_NAME'.$i;
 			$offsettz='AGENDA_EXT_OFFSETTZ'.$i;
 			$color='AGENDA_EXT_COLOR'.$i;
 			$buggedfile='AGENDA_EXT_BUGGEDFILE'.$i;
-			if ( getDolGlobalString($source) && getDolGlobalString($name))
-			{
+			if ( getDolGlobalString($source) && getDolGlobalString($name)) {
 				// Note: getDolGlobalString('buggedfile') can be empty or 'uselocalandtznodaylight' or 'uselocalandtzdaylight'
 				$listofextcals[]=array('src'=>getDolGlobalString($source),'name'=>getDolGlobalString($name),'offsettz'=>getDolGlobalString($offsettz),'color'=>getDolGlobalString($color),'buggedfile'=>(getDolGlobalString('buggedfile',0)));
 			}
@@ -1221,11 +1238,9 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 	}
 
 	// Define list of external calendars (user setup)
-	if (empty($user->conf->AGENDA_DISABLE_EXT))
-	{
+	if (empty($user->conf->AGENDA_DISABLE_EXT)) {
 		$i=0;
-		while($i < $MAXAGENDA)
-		{
+		while ($i < $MAXAGENDA) {
 			$i++;
 			$source='AGENDA_EXT_SRC_'.$user->id.'_'.$i;
 			$name='AGENDA_EXT_NAME_'.$user->id.'_'.$i;
@@ -1233,8 +1248,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 			$color='AGENDA_EXT_COLOR_'.$user->id.'_'.$i;
 			$enabled='AGENDA_EXT_ENABLED_'.$user->id.'_'.$i;
 			$buggedfile='AGENDA_EXT_BUGGEDFILE_'.$user->id.'_'.$i;
-			if (! empty($user->conf->$source) && ! empty($user->conf->$name))
-			{
+			if (! empty($user->conf->$source) && ! empty($user->conf->$name)) {
 				// Note: getDolGlobalString('buggedfile') can be empty or 'uselocalandtznodaylight' or 'uselocalandtzdaylight'
 				$listofextcals[] = array(
 					'src' => isset($user->conf->$source) ? $user->conf->$source : null,
@@ -1257,8 +1271,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 	$month=GETPOST("month","int")?GETPOST("month","int"):date("m");
 	$week=GETPOST("week","int")?GETPOST("week","int"):date("W");
 	$day=GETPOST("day","int")?GETPOST("day","int"):0;
-	if (empty($action) || $action=='show_month')
-	{
+	if (empty($action) || $action=='show_month') {
 		$prev = dol_get_prev_month($month, $year);
 		$prev_year  = $prev['year'];
 		$prev_month = $prev['month'];
@@ -1281,8 +1294,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 		$next_day = 42 - $max_day_in_month;
 		$lastdaytoshow=dol_mktime(0,0,0,$next_month,$next_day,$next_year);
 	}
-	if ($action=='show_week')
-	{
+	if ($action=='show_week') {
 		$prev = dol_get_first_day_week($day, $month, $year);
 		$prev_year  = $prev['prev_year'];
 		$prev_month = $prev['prev_month'];
@@ -1307,8 +1319,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 
 		$tmpday = $first_day;
 	}
-	if ($action == 'show_day')
-	{
+	if ($action == 'show_day') {
 		$prev = dol_get_prev_day($day, $month, $year);
 		$prev_year  = $prev['year'];
 		$prev_month = $prev['month'];
@@ -1326,8 +1337,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 
 	// Complete $eventarray with external import Ical
 	require_once DOL_DOCUMENT_ROOT.'/comm/action/class/ical.class.php';
-	foreach($listofextcals as $extcal)
-	{
+	foreach ($listofextcals as $extcal) {
 		$url=$extcal['src'];    // Example: https://www.google.com/calendar/ical/eldy10%40gmail.com/private-cde92aa7d7e0ef6110010a821a2aaeb/basic.ics
 		$namecal = $extcal['name'];
 		$offsettz = $extcal['offsettz'];
@@ -1343,27 +1353,20 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 		if (is_array($ical->get_event_list())) $icalevents=array_merge($icalevents,$ical->get_event_list());        // Add $ical->cal['VEVENT']
 		if (is_array($ical->get_freebusy_list())) $icalevents=array_merge($icalevents,$ical->get_freebusy_list());  // Add $ical->cal['VFREEBUSY']
 
-		if (count($icalevents)>0)
-		{
+		if (count($icalevents)>0) {
 			// Duplicate all repeatable events into new entries
 			$moreicalevents=array();
-			foreach($icalevents as $icalevent)
-			{
-				if (isset($icalevent['RRULE']) && is_array($icalevent['RRULE'])) //repeatable event
-				{
+			foreach ($icalevents as $icalevent) {
+				if (isset($icalevent['RRULE']) && is_array($icalevent['RRULE'])) { //repeatable event
 					//if ($event->date_start_in_calendar < $firstdaytoshow) $event->date_start_in_calendar=$firstdaytoshow;
 					//if ($event->date_end_in_calendar > $lastdaytoshow) $event->date_end_in_calendar=($lastdaytoshow-1);
-					if ($icalevent['DTSTART;VALUE=DATE']) //fullday event
-					{
+					if ($icalevent['DTSTART;VALUE=DATE']) { //fullday event
 						$datecurstart=dol_stringtotime($icalevent['DTSTART;VALUE=DATE'],1);
 						$datecurend=dol_stringtotime($icalevent['DTEND;VALUE=DATE'],1)-1;  // We remove one second to get last second of day
-					}
-					else if (is_array($icalevent['DTSTART']) && ! empty($icalevent['DTSTART']['unixtime']))
-					{
+					} elseif (is_array($icalevent['DTSTART']) && ! empty($icalevent['DTSTART']['unixtime'])) {
 						$datecurstart=$icalevent['DTSTART']['unixtime'];
 						$datecurend=$icalevent['DTEND']['unixtime'];
-						if (! empty($ical->cal['DAYLIGHT']['DTSTART']) && $datecurstart)
-						{
+						if (! empty($ical->cal['DAYLIGHT']['DTSTART']) && $datecurstart) {
 							//var_dump($ical->cal);
 							$tmpcurstart=$datecurstart;
 							$tmpcurend=$datecurend;
@@ -1378,9 +1381,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 						}
 						// datecurstart and datecurend are now GMT date
 						//var_dump($datecurstart); var_dump($datecurend); exit;
-					}
-					else
-					{
+					} else {
 						// Not a recongized record
 						dol_syslog("Found a not recognized repeatable record with unknown date start", LOG_ERR);
 						continue;
@@ -1394,19 +1395,14 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 					if ($datecurstart >= $lastdaytoshow) continue;                                   // We discard repeatable event that start after end date to show
 
 					$numofevent=0;
-					while (($datecurstart < $lastdaytoshow) && (empty($maxrepeat) || ($numofevent < $maxrepeat)))
-					{
-						if ($datecurend >= $firstdaytoshow)    // We add event
-						{
+					while (($datecurstart < $lastdaytoshow) && (empty($maxrepeat) || ($numofevent < $maxrepeat))) {
+						if ($datecurend >= $firstdaytoshow) {    // We add event
 							$newevent=$icalevent;
 							unset($newevent['RRULE']);
-							if ($icalevent['DTSTART;VALUE=DATE'])
-							{
+							if ($icalevent['DTSTART;VALUE=DATE']) {
 								$newevent['DTSTART;VALUE=DATE']=dol_print_date($datecurstart,'%Y%m%d');
 								$newevent['DTEND;VALUE=DATE']=dol_print_date($datecurend+1,'%Y%m%d');
-							}
-							else
-							{
+							} else {
 								$newevent['DTSTART']=$datecurstart;
 								$newevent['DTEND']=$datecurend;
 							}
@@ -1415,29 +1411,22 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 						// Jump on next occurence
 						$numofevent++;
 						$savdatecurstart=$datecurstart;
-						if ($icalevent['RRULE']['FREQ']=='DAILY')
-						{
+						if ($icalevent['RRULE']['FREQ']=='DAILY') {
 							$datecurstart=dol_time_plus_duree($datecurstart, $interval, 'd');
 							$datecurend=dol_time_plus_duree($datecurend, $interval, 'd');
 						}
-						if ($icalevent['RRULE']['FREQ']=='WEEKLY')
-						{
+						if ($icalevent['RRULE']['FREQ']=='WEEKLY') {
 							$datecurstart=dol_time_plus_duree($datecurstart, $interval, 'w');
 							$datecurend=dol_time_plus_duree($datecurend, $interval, 'w');
-						}
-						elseif ($icalevent['RRULE']['FREQ']=='MONTHLY')
-						{
+						} elseif ($icalevent['RRULE']['FREQ']=='MONTHLY') {
 							$datecurstart=dol_time_plus_duree($datecurstart, $interval, 'm');
 							$datecurend=dol_time_plus_duree($datecurend, $interval, 'm');
-						}
-						elseif ($icalevent['RRULE']['FREQ']=='YEARLY')
-						{
+						} elseif ($icalevent['RRULE']['FREQ']=='YEARLY') {
 							$datecurstart=dol_time_plus_duree($datecurstart, $interval, 'y');
 							$datecurend=dol_time_plus_duree($datecurend, $interval, 'y');
 						}
 						// Test to avoid infinite loop ($datecurstart must increase)
-						if ($savdatecurstart >= $datecurstart)
-						{
+						if ($savdatecurstart >= $datecurstart) {
 							dol_syslog("Found a rule freq ".$icalevent['RRULE']['FREQ']." not managed by dolibarr code. Assume 1 week frequency.", LOG_ERR);
 							$datecurstart+=3600*24*7;
 							$datecurend+=3600*24*7;
@@ -1448,8 +1437,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 			$icalevents=array_merge($icalevents,$moreicalevents);
 
 			// Loop on each entry into cal file to know if entry is qualified and add an ActionComm into $eventarray
-			foreach($icalevents as $icalevent)
-			{
+			foreach ($icalevents as $icalevent) {
 				//var_dump($icalevent);
 
 				//print $icalevent['SUMMARY'].'->'.var_dump($icalevent).'<br>';exit;
@@ -1465,8 +1453,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
                 if (empty ($eventContactId)) $eventContactId = $event->contactid;
 
 				$addevent = false;
-				if (isset($icalevent['DTSTART;VALUE=DATE'])) // fullday event
-				{
+				if (isset($icalevent['DTSTART;VALUE=DATE'])) { // fullday event
 					// For full day events, date are also GMT but they wont but converted using tz during output
 					$datestart=dol_stringtotime($icalevent['DTSTART;VALUE=DATE'],1);
 					$dateend=dol_stringtotime($icalevent['DTEND;VALUE=DATE'],1)-1;  // We remove one second to get last second of day
@@ -1474,9 +1461,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 					//print dol_print_date($dateend,'dayhour','gmt');
 					$event->fulldayevent=true;
 					$addevent=true;
-				}
-				elseif (!is_array($icalevent['DTSTART'])) // not fullday event (DTSTART is not array. It is a value like '19700101T000000Z' for 00:00 in greenwitch)
-				{
+				} elseif (!is_array($icalevent['DTSTART'])) { // not fullday event (DTSTART is not array. It is a value like '19700101T000000Z' for 00:00 in greenwitch)
 					$datestart=$icalevent['DTSTART'];
 					$dateend=$icalevent['DTEND'];
 
@@ -1486,9 +1471,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 					$addevent=true;
 					//var_dump($offsettz);
 					//var_dump(dol_print_date($datestart, 'dayhour', 'gmt'));
-				}
-				elseif (isset($icalevent['DTSTART']['unixtime']))	// File contains a local timezone + a TZ (for example when using bluemind)
-				{
+				} elseif (isset($icalevent['DTSTART']['unixtime'])) {	// File contains a local timezone + a TZ (for example when using bluemind)
 					$datestart=$icalevent['DTSTART']['unixtime'];
 					$dateend=$icalevent['DTEND']['unixtime'];
 
@@ -1496,13 +1479,11 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 					$dateend+=+($offsettz * 3600);
 
 					// $buggedfile is set to uselocalandtznodaylight if conf->global->AGENDA_EXT_BUGGEDFILEx = 'uselocalandtznodaylight'
-					if ($buggedfile === 'uselocalandtznodaylight')	// unixtime is a local date that does not take daylight into account, TZID is +1 for example for 'Europe/Paris' in summer instead of 2
-					{
+					if ($buggedfile === 'uselocalandtznodaylight') {	// unixtime is a local date that does not take daylight into account, TZID is +1 for example for 'Europe/Paris' in summer instead of 2
 						// TODO
 					}
 					// $buggedfile is set to uselocalandtzdaylight if conf->global->AGENDA_EXT_BUGGEDFILEx = 'uselocalandtzdaylight' (for example with bluemind)
-					if ($buggedfile === 'uselocalandtzdaylight')	// unixtime is a local date that does take daylight into account, TZID is +2 for example for 'Europe/Paris' in summer
-					{
+					if ($buggedfile === 'uselocalandtzdaylight') {	// unixtime is a local date that does take daylight into account, TZID is +2 for example for 'Europe/Paris' in summer
 						$localtzs = new DateTimeZone(preg_replace('/"/','',$icalevent['DTSTART']['TZID']));
 						$localtze = new DateTimeZone(preg_replace('/"/','',$icalevent['DTEND']['TZID']));
 						$localdts = new DateTime(dol_print_date($datestart,'dayrfc','gmt'), $localtzs);
@@ -1516,8 +1497,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 					$addevent=true;
 				}
 
-				if ($addevent)
-				{
+				if ($addevent) {
 					$event->id=$icalevent['UID'];
 					$event->icalname=$namecal;
 					$event->icalcolor=$colorcal;
@@ -1536,22 +1516,18 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 					else $event->date_end_in_calendar=$event->datep;
 
 					// Define ponctual property
-					if ($event->date_start_in_calendar == $event->date_end_in_calendar)
-					{
+					if ($event->date_start_in_calendar == $event->date_end_in_calendar) {
 						$event->ponctuel=1;
 						//print 'x'.$datestart.'-'.$dateend;exit;
 					}
 
 					// Add event into $eventarray if date range are ok.
-					if ($event->date_end_in_calendar < $firstdaytoshow || $event->date_start_in_calendar >= $lastdaytoshow)
-					{
+					if ($event->date_end_in_calendar < $firstdaytoshow || $event->date_start_in_calendar >= $lastdaytoshow) {
 						//print 'x'.$datestart.'-'.$dateend;exit;
 						//print 'x'.$datestart.'-'.$dateend;exit;
 						//print 'x'.$datestart.'-'.$dateend;exit;
 						// This record is out of visible range
-					}
-					else
-					{
+					} else {
 						if ($event->date_start_in_calendar < $firstdaytoshow) $event->date_start_in_calendar=$firstdaytoshow;
 						if ($event->date_end_in_calendar >= $lastdaytoshow) $event->date_end_in_calendar=($lastdaytoshow - 1);
 
@@ -1566,8 +1542,7 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 						// daykey must be date that represent day box in calendar so must be a user time
 						$daykey=dol_mktime(0,0,0,$mois,$jour,$annee);
 						$daykeygmt=dol_mktime(0,0,0,$mois,$jour,$annee,true,0);
-						do
-						{
+						do {
 							//if ($event->fulldayevent) print dol_print_date($daykeygmt,'dayhour','gmt').'-'.dol_print_date($daykey,'dayhour','gmt').'-'.dol_print_date($event->date_end_in_calendar,'dayhour','gmt').' ';
 
 
@@ -1581,8 +1556,8 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 								'id'=>$event->id
 								,'title'=>(!empty($event->label) ? $event->label : $event->libelle) . "\n(".$event->icalname.')'
 								,'allDay'=>(bool)($event->fulldayevent)
-								,'start'=>(empty($event->datep) ? '' : date('Y-m-d H:i:s',(int)$event->datep))
-								,'end'=>(empty($event->datef) ? '' : date('Y-m-d H:i:s',(int)$event->datef))
+								,'start'=>(empty($event->datep) ? '' : dol_print_date($event->datep, '%Y-%m-%d %H:%M:%S'))
+								,'end'=>(empty($event->datef) ? '' : dol_print_date($event->datef, '%Y-%m-%d %H:%M:%S'))
 								,'url'=>dol_buildpath('/comm/action/card.php?id='.$event->id,1)
 								,'editable'=>$editable
 								,'color'=>'#'.$colorcal
@@ -1604,18 +1579,19 @@ function completeWithExtEvent(&$TEvent, &$TSociete, &$TContact, &$TProject)
 
 							$daykey+=60*60*24;  $daykeygmt+=60*60*24;   // Add one day
 							if (($event->fulldayevent ? $daykeygmt : $daykey) > $event->date_end_in_calendar) $loop=false;
+						} while ($loop);
 						}
-						while ($loop);
 					}
-
 				}
 			}
 		}
 	}
 
-}
-/*
- * convert stored hours with $form->select_date
+/**
+ * Convert stored hours with $form->select_date.
+ *
+ * @param int $timestamp Timestamp to convert
+ * @return int Converted timestamp
  */
 function _convertTimestampLocalToNoLocalSecond($timestamp)
 {
@@ -1625,56 +1601,51 @@ function _convertTimestampLocalToNoLocalSecond($timestamp)
 }
 
 /**
- * function qui ajoute les notif agenda pour chaque user assigné à l'event
- * @param ActionComm $a
- * @param string $mode
+ * Fonction qui ajoute les notifications agenda pour chaque user assigné à l'événement.
+ *
+ * @param ActionComm $a    Objet action agenda pour lequel créer les rappels
+ * @param string     $mode Mode d'appel de la fonction ('create', 'update', 'drop')
+ *
+ * @return void
  */
 function addReminders($a, $mode = 'create')
 {
 	global $db, $conf, $user;
 
-	if (getDolGlobalString('AGENDA_REMINDER_EMAIL') || getDolGlobalString('AGENDA_REMINDER_BROWSER'))
-	{
+	if (getDolGlobalString('AGENDA_REMINDER_EMAIL') || getDolGlobalString('AGENDA_REMINDER_BROWSER')) {
 		$setReminder = GETPOST('setReminder');
 		$reminderValue = GETPOST('reminderValue');
 		$reminderUnit = GETPOST('reminderUnit');
 		$reminderType = GETPOST('reminderType');
 		$reminderTemplate = GETPOST('reminderTemplate');
 
-		if ($mode == 'drop')
-		{
-			// aller rechercher les infos de reminder attaché
-			$sqlremind = "SELECT acr.rowid FROM ".MAIN_DB_PREFIX."actioncomm_reminder acr WHERE acr.fk_actioncomm = ".$a->id;
+		if ($mode == 'drop') {
+			// Fetch reminder info attached to this action
+			$sqlremind = "SELECT acr.rowid FROM ".$db->prefix()."actioncomm_reminder acr WHERE acr.fk_actioncomm = ".$a->id;
 			$resql = $db->query($sqlremind);
-			if ($resql && $db->num_rows($resql))
-			{
+			if ($resql && $db->num_rows($resql)) {
 				$setReminder = true;
 
 				$obj = $db->fetch_object($resql);
 
 				$actionCommReminder = new ActionCommReminder($db);
 				$res = $actionCommReminder->fetch($obj->rowid);
-				if ($res > 0)
-				{
+				if ($res > 0) {
 					$reminderValue = $actionCommReminder->offsetvalue;
 					$reminderUnit = $actionCommReminder->offsetunit;
 					$reminderType = $actionCommReminder->typeremind;
 					$reminderTemplate = $actionCommReminder->fk_email_template;
 				}
 			}
-
-
 		}
 
-		if ($mode == 'update' || $mode == 'drop')
-		{
+		if ($mode == 'update' || $mode == 'drop') {
 			// delete reminders to recreate them
-			$sql = "DELETE FROM ".MAIN_DB_PREFIX."actioncomm_reminder WHERE fk_actioncomm = ".$a->id;
+			$sql = "DELETE FROM ".$db->prefix()."actioncomm_reminder WHERE fk_actioncomm = ".$a->id;
 			$resql = $db->query($sql);
 		}
 
-		if ($setReminder)
-		{
+		if ($setReminder) {
 			$actionCommReminder = new ActionCommReminder($db);
 
 			$unitsMap = [
@@ -1703,8 +1674,7 @@ function addReminders($a, $mode = 'create')
 			$actionCommReminder->fk_actioncomm = $a->id;
 			if ($reminderType == 'email') $actionCommReminder->fk_email_template = $reminderTemplate;
 
-			foreach ($a->userassigned as $userassigned)
-			{
+			foreach ($a->userassigned as $userassigned) {
 				$actionCommReminder->fk_user = $userassigned['id'];
 				$res = $actionCommReminder->create($user);
 			}
@@ -1724,7 +1694,8 @@ function addReminders($a, $mode = 'create')
  * @param bool $isStart true = start, false = end
  * @return string Date/time in ISO format (Y-m-d\TH:i:s)
  */
-function getHolidayDateTime(string $date, int $halfday, int $morningStartSec, int $morningEndSec, int $afternoonStartSec, int $afternoonEndSec, bool $isStart = true) : string  {
+function getHolidayDateTime(string $date, int $halfday, int $morningStartSec, int $morningEndSec, int $afternoonStartSec, int $afternoonEndSec, bool $isStart = true) : string
+{
 	$dt = new DateTime($date);
 
 	// Table of start and end times for each half-day code
