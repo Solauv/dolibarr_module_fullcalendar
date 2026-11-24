@@ -1010,9 +1010,11 @@ header('Content-Type: text/javascript');
 						for (const item of data) {
 							options += `<option value="${item.key}">${item.value}</option>`;
 						}
-						$form.find('#interventionid').html('<select class="flat" id="fk_fichinter" name="fk_fichinter">' + options + '</select>');
-						$('#interventionid').select2();
-						$('#interventionid').val(fk_fichinter).trigger('change');
+						// The id of the select is "interventionid" up to Dolibarr 16 and its name after : find it by its name
+						const selectFichinterEl = $form.find('select[name=fk_fichinter]');
+						selectFichinterEl.html(options);
+						selectFichinterEl.select2();
+						selectFichinterEl.val(fk_fichinter).trigger('change');
 					});
 				});
 			<?php endif; ?>
@@ -1184,7 +1186,7 @@ header('Content-Type: text/javascript');
 										,fk_user:TUserId
 										,fk_project:<?php if (getDolGlobalString('FULLCALENDAR_SHOW_PROJECT')) { ?>$('#pop-new-event #fk_project').val()<?php } else { ?>fk_project<?php } ?>
 										<?php if (getDolGlobalString('FULLCALENDAR_SHOW_INTERVENTION')) { ?>
-											,fk_fichinter:$('#pop-new-event #interventionid').val()
+											,fk_fichinter:$('#pop-new-event select[name=fk_fichinter]').val()
 										<?php } ?>
 										,type_code:$('#pop-new-event select[name=type_code]').val()
 										,date_start:$('#pop-new-event #apyear').val()+'-'+$('#pop-new-event #apmonth').val()+'-'+$('#pop-new-event #apday').val()+' '+$('#pop-new-event #aphour').val()+':'+$('#pop-new-event #apmin').val()+':00'
