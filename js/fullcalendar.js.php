@@ -1,4 +1,19 @@
 <?php
+/* Copyright (C) 2025 ATM Consulting
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', '1'); // Disable token renewal
 
@@ -19,8 +34,7 @@ header('Content-Type: text/javascript');
 	if (getDolGlobalString('FULLCALENDAR_SHOW_INTERVENTION')) {
 		dol_include_once('/core/class/html.formintervention.class.php');
 	}
-	if (getDolGlobalString('FULLCALENDAR_CAN_UPDATE_PERCENT'))
-	{
+	if (getDolGlobalString('FULLCALENDAR_CAN_UPDATE_PERCENT')) {
 		require_once DOL_DOCUMENT_ROOT.'/core/class/html.formactions.class.php';
 		$formactions = new FormActions($db);
 	}
@@ -38,7 +52,6 @@ header('Content-Type: text/javascript');
 
 	if(!empty($user->array_options['options_googlecalendarapi'])) {
 	//	readfile(dol_buildpath('/fullcalendar/lib/fullcalendar/dist/fullcalendar/gcal.js'));
-
 	}
 
 	ob_start();
@@ -63,27 +76,20 @@ header('Content-Type: text/javascript');
 
 	$force_entity=0;
 	$sql = "SELECT DISTINCT u.rowid, u.lastname as lastname, u.firstname, u.statut, u.login, u.admin, u.entity";
-	if (isModEnabled('multicompany') && $conf->entity == 1 && $user->admin && ! $user->entity)
-	{
+if (isModEnabled('multicompany') && $conf->entity == 1 && $user->admin && ! $user->entity) {
 		$sql.= ", e.label";
 	}
 	$sql.= " FROM ".MAIN_DB_PREFIX ."user as u";
-	if (isModEnabled('multicompany') && $conf->entity == 1 && $user->admin && ! $user->entity)
-	{
+if (isModEnabled('multicompany') && $conf->entity == 1 && $user->admin && ! $user->entity) {
 		$sql.= " LEFT JOIN ".MAIN_DB_PREFIX ."entity as e ON e.rowid=u.entity";
 		if ($force_entity) $sql.= " WHERE u.entity IN (0,".$force_entity.")";
 		else $sql.= " WHERE u.entity IS NOT NULL";
-	}
-	else
-	{
-		if (getDolGlobalString('MULTICOMPANY_TRANSVERSE_MODE'))
-		{
+} else {
+	if (getDolGlobalString('MULTICOMPANY_TRANSVERSE_MODE')) {
 			$sql.= " LEFT JOIN ".MAIN_DB_PREFIX."usergroup_user as ug";
 			$sql.= " ON ug.fk_user = u.rowid";
 			$sql.= " WHERE ug.entity = ".$conf->entity;
-		}
-		else
-		{
+	} else {
 			$sql.= " WHERE u.entity IN (0,".$conf->entity.")";
 		}
 	}
@@ -108,7 +114,6 @@ header('Content-Type: text/javascript');
 		$userstatic->firstname=$objUser->firstname;
 
 		$TUserToSelect[$userstatic->id] = $userstatic->getFullName($langs,0,-1,80);
-
 	}
 	//var_dump($TUserToSelect);
 
@@ -146,8 +151,7 @@ header('Content-Type: text/javascript');
 	$reshook=$hookmanager->executeHooks('addOptionCalendarEvents',$parameters,$object,$action);
 	if (! empty($hookmanager->resPrint)) $moreOptions = json_decode($hookmanager->resPrint);
 
-	if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE'))
-	{
+if (getDolGlobalString('FULLCALENDAR_FILTER_ON_STATE')) {
 		dol_include_once('/core/class/html.formcompany.class.php');
 		$formcompany = new FormCompany($db);
 	}
@@ -255,7 +259,6 @@ header('Content-Type: text/javascript');
 		    }*/
 
 			if(getDolGlobalString('FULLCALENDAR_DURATION_SLOT')) {
-
 				echo ',slotDuration:"' . getDolGlobalString('FULLCALENDAR_DURATION_SLOT').'"';
 			}
 
@@ -282,7 +285,6 @@ header('Content-Type: text/javascript');
 			}
 			<?php
 				if(getDolGlobalString('FULLCALENDAR_HIDE_DAYS')) {
-
 					?>
 					,hiddenDays: [ <?php echo getDolGlobalString('FULLCALENDAR_HIDE_DAYS') ?> ]
 					<?php
@@ -348,8 +350,7 @@ header('Content-Type: text/javascript');
 				if(event.note)
 				{
 					<?php
-					if(getDolGlobalString('FULLCALENDAR_SHOW_EVENT_DESCRIPTION'))
-					{
+					if (getDolGlobalString('FULLCALENDAR_SHOW_EVENT_DESCRIPTION')) {
 						?>
 						element.append('<div style="z-index:3;position:relative;">' + event.note + '</div>');
 						<?php
@@ -368,18 +369,15 @@ header('Content-Type: text/javascript');
 				}
 				<?php
 				if(getDolGlobalString('FULLCALENDAR_SHOW_AFFECTED_USER')) {
-
 					?>
 					if(event.fk_user>0){
 						 element.append('<div style="z-index:3;position:relative;">'+event.user+'</div>');
 						 note += '<div style="z-index:3;position:relative;">'+event.user+'</div>';
 					}
 					<?php
-
 				}
 
 				if(getDolGlobalString('FULLCALENDAR_SHOW_PROJECT')) {
-
 					?>
 					if(event.fk_project>0){
 						 element.append('<div style="z-index:3;position:relative;">'+event.project+'</div>');
@@ -399,14 +397,12 @@ header('Content-Type: text/javascript');
 				}
 
 				if(getDolGlobalString('FULLCALENDAR_SHOW_ORDER')) {
-
 					?>
 					if(event.fk_project>0 && event.fk_project_order>0){
 						 element.append('<div style="z-index:3;position:relative;">'+event.project_order+'</div>');
 						 note = '<div style="z-index:3;position:relative;">'+event.project_order+'</div>'+note;
 					}
 					<?php
-
 				}
 
 
@@ -420,7 +416,11 @@ header('Content-Type: text/javascript');
 					note = note+'<div style="z-index:3;position:relative;"><span class="badge badge-info"><?php print addslashes($langs->transnoentities('FullDayEventSplited')); ?></span></div>';
 				}
 
+				<?php
+				if (getDolGlobalString('FULLCALENDAR_SHOW_EVENT_STATUS')) {
+					?>
 				element.prepend('<div style="float:right;">'+event.statut+'</div>');
+				<?php } ?>
 
 				if ($().tipTip) // ou $.fn.tipTip, mais $.tipTip ne fonctionne pas
 				{
@@ -704,7 +704,6 @@ header('Content-Type: text/javascript');
 			$form.append(<?php echo json_encode($form->select_date(0,'p2',1,1,0,"action",1,0,1,0,'fulldayend')); ?>);
 
 			<?php if(getDolGlobalString('FULLCALENDAR_PREFILL_DATETIMES')) { ?>
-
 			$form.append('<br />Pré-remplissage : <a href="javascript:;" class="prefillDate" id="prefillDateMorning">Matin</a> | ');
 			$form.append(' <a href class="prefillDate" id="prefillDateAfternoon">Après-midi</a> | ');
 			$form.append(' <a href class="prefillDate" id="prefillDateDay">Journée</a><br />');
@@ -794,7 +793,6 @@ header('Content-Type: text/javascript');
 			<?php
 
 			if(getDolGlobalString('FULLCALENDAR_SHOW_PROJECT')) {
-
 				?>
 				$form.append('<br /><?php echo $langs->trans('Project'); ?> : ');
 				$form.append(<?php echo json_encode($select_project); ?>);
@@ -887,18 +885,14 @@ header('Content-Type: text/javascript');
 				$reminderparameters.append(<?php echo json_encode($script); ?>);
 				$form.append($reminderparameters);
 				<?php
-
 			}
 
 			if(!empty($moreOptions)) {
-
-				foreach ($moreOptions as $param => $option)
-				{
+				foreach ($moreOptions as $param => $option) {
 				?>
 					$form.append('<br />'+<?php echo json_encode($option); ?>);
 				<?php
 				}
-
 			}
 			?>
 
@@ -1083,8 +1077,7 @@ header('Content-Type: text/javascript');
 <?php
 	$parameters=array(); $action = 'showPopIn'; $object = null;
 	$reshook=$hookmanager->executeHooks('addShowPopInBehaviour',$parameters,$object,$action);
-	if ($reshook >= 0 && ! empty($hookmanager->resPrint))
-	{
+if ($reshook >= 0 && ! empty($hookmanager->resPrint)) {
 		print $hookmanager->resPrint;
 	}
 ?>
@@ -1198,9 +1191,7 @@ header('Content-Type: text/javascript');
 										<?php } ?>
 										<?php
 										if(!empty($moreOptions)) {
-
-											foreach ($moreOptions as $param => $option)
-											{
+											foreach ($moreOptions as $param => $option) {
 												echo ','.$param.':$("#pop-new-event select[name='.$param.']").val()';
 											}
 										}
@@ -1208,8 +1199,7 @@ header('Content-Type: text/javascript');
 										 * conf disponible en 13.0
 										 * envoie des données servant à créer les notifs
 										 */
-										if (getDolGlobalString('AGENDA_REMINDER_EMAIL') || getDolGlobalString('AGENDA_REMINDER_BROWSER'))
-										{
+										if (getDolGlobalString('AGENDA_REMINDER_EMAIL') || getDolGlobalString('AGENDA_REMINDER_BROWSER')) {
 											?>
 												,setReminder: $('#pop-new-event input[name=addreminder]').prop('checked') == false ? 0 : 1
 												,reminderValue:$('#pop-new-event input[name=offsetvalue]').val()
@@ -1297,7 +1287,7 @@ header('Content-Type: text/javascript');
 									<?php
 									if (!empty($moreOptions)) {
 										foreach ($moreOptions as $param => $option) {
-											echo ',' . $param . ':$("#pop-new-event select[name=' . $param . ']").val()';
+											echo $param . ':$("#pop-new-event select[name=' . $param . ']").val(),';
 										}
 									}
 									?>
@@ -1387,8 +1377,6 @@ header('Content-Type: text/javascript');
 		}
 
 		$form_selector.submit(function(event) {
-			console.log($form_selector.serialize() );
-			console.log($('#fullcalendar'));
 			var newsource = '<?php echo dol_buildpath('/fullcalendar/script/interface.php',1) ?>'+'?'+$form_selector.serialize();
 			$('#fullcalendar').fullCalendar('removeEvents');
 			$('#fullcalendar').fullCalendar('removeEventSource', currentsource);
@@ -1398,16 +1386,22 @@ header('Content-Type: text/javascript');
 			var url = '<?php echo dol_buildpath('/comm/action/index.php',1) ?>?'+$form_selector.serialize() ;
 			history.pushState("FullCalendar","FullCalendar", url)
 
-			var $a = $('table[summary=bookmarkstable] a.vsmenu[href*=create]');
-			$a.attr('href',"<?php echo dol_buildpath('/bookmarks/card.php',1)  ?>?action=create&url_source="+encodeURIComponent(url)+"&url="+encodeURIComponent(url));
-			$('option[value=newbookmark]').attr("rel","<?php echo dol_buildpath('/bookmarks/card.php',1) ?>?action=create&url="+encodeURIComponent(url));
+			var bookmarkCreateUrl = "<?php echo dol_buildpath('/bookmarks/card.php', 1) ?>?action=create&url="+encodeURIComponent(url);
+
+			// Dolibarr >= 18: "add this page to bookmarks" link in the top-menu bookmark dropdown
+			$('a.top-menu-dropdown-link[href*="action=create"]').attr('href', bookmarkCreateUrl);
+
+			// Legacy bookmark menu (older Dolibarr versions)
+			$('table[summary=bookmarkstable] a.vsmenu[href*=create]').attr('href', "<?php echo dol_buildpath('/bookmarks/card.php', 1)  ?>?action=create&url_source="+encodeURIComponent(url)+"&url="+encodeURIComponent(url));
+
+			// Text-browser select mode
+			$('option[value=newbookmark]').attr("rel", bookmarkCreateUrl);
 
 		});
 
 
 <?php
-	if(! empty($conf->use_javascript_ajax))
-	{
+if (! empty($conf->use_javascript_ajax)) {
 ?>
 		$('#actioncode, #projectid').select2({ width: '100%' });
 <?php
